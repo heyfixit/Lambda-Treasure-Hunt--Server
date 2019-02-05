@@ -58,8 +58,6 @@ def api_response(player, cooldown_seconds, errors=None, messages=None):
                                  'title': "Darkness",
                                  'description':"It is too dark to see anything.",
                                  'coordinates':room.coordinates,
-                                 'players':room.playerNames(player.id, True),
-                                 'items':room.itemNames(),
                                  'exits':room.exits(),
                                  'cooldown': cooldown_seconds,
                                  'errors': errors,
