@@ -19,6 +19,7 @@ SHOP_ROOM_ID=1
 PENALTY_COOLDOWN_VIOLATION=5
 PENALTY_NOT_FOUND=5
 PENALTY_CANNOT_MOVE_THAT_WAY=5
+PENALTY_TOO_HEAVY=5
 
 MIN_COOLDOWN = 1
 MAX_COOLDOWN = 600
@@ -175,6 +176,9 @@ def take(request):
     if item is None:
         cooldown_seconds += PENALTY_NOT_FOUND
         errors.append(f"Item not found: +{PENALTY_NOT_FOUND}s CD")
+    elif player.strength * 2 <= player.encumbrance + item.weight:
+        cooldown_seconds += PENALTY_TOO_HEAVY
+        errors.append(f"Item too heavy: +{PENALTY_TOO_HEAVY}s CD")
     else:
         messages.append(f"You have picked up {item.name}")
         player.addItem(item)
