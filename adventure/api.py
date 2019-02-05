@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
 
 SHOP_ROOM_ID=1
+NAME_CHANGE_ROOM_ID=467
 
 
 PENALTY_COOLDOWN_VIOLATION=5
@@ -72,7 +73,7 @@ def player_api_response(player, cooldown_seconds, errors=None, messages=None):
         errors = []
     if messages is None:
         messages = []
-    response = JsonResponse({'name':player.user.username,
+    response = JsonResponse({'name':player.name,
                              'cooldown': cooldown_seconds,
                              'encumbrance': player.encumbrance,
                              'strength': player.strength,
@@ -386,6 +387,35 @@ def remove(request):
     # player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
     # player.save()
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
+
+
+
+@api_view(["POST"])
+def change_name(request):
+    player = request.user.player
+    data = json.loads(request.body)
+
+    cooldown_error = check_cooldown_error(player)
+    if cooldown_error is not None:
+        return cooldown_error
+
+    new_name = data['name']
+    cooldown_seconds = get_cooldown(player, 2.0)
+    errors = []
+    messages = []
+    if player.currentRoom != NAME_CHANGE_ROOM_ID:
+        cooldown_seconds += 5 * PENALTY_NOT_FOUND
+        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.save()
+        errors.append("Name changer not found: +{5 * PENALTY_NOT_FOUND}")
+    else:
+        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.name = new_name
+        player.save()
+        messages.append(f"You have changed your name to {new_name}.")
+    return api_response(player, cooldown_seconds, errors=errors, messages=messages)
+
+
 
 
 

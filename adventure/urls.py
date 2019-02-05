@@ -11,4 +11,5 @@ urlpatterns = [
     url('wear', api.wear),
     url('remove', api.remove),
     url('examine', api.examine),
+    url('change_name', api.change_name),
 ]
