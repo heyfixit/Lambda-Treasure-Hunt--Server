@@ -55,9 +55,11 @@ def api_response(player, cooldown_seconds, errors=None, messages=None):
                                  'messages':messages}, safe=True)
     else:
         response = JsonResponse({'room_id':room.id,
-                                 'title': "Darkness",
-                                 'description':"It is too dark to see anything.",
+                                 'title': room.title,
+                                 'description':room.description,
                                  'coordinates':room.coordinates,
+                                 'players':room.playerNames(player.id, True),
+                                 'items':room.itemNames(),
                                  'exits':room.exits(),
                                  'cooldown': cooldown_seconds,
                                  'errors': errors,
@@ -115,7 +117,6 @@ def player_examine_api_response(player, cooldown_seconds, errors=None, messages=
 def get_cooldown(player, cooldown_scale):
     speed_adjustment = player.speed - 10
     time_factor = float(config('TIME_SCALE'))
-    time_factor = 1.0
     if player.is_pm:
         time_factor = min(time_factor, 5)
     return max(MIN_COOLDOWN, cooldown_scale * time_factor - speed_adjustment)
