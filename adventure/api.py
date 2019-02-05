@@ -58,6 +58,8 @@ def api_response(player, cooldown_seconds, errors=None, messages=None):
                                  'title': "Darkness",
                                  'description':"It is too dark to see anything.",
                                  'coordinates':room.coordinates,
+                                 'players':room.playerNames(player.id, True),
+                                 'items':room.itemNames(),
                                  'exits':room.exits(),
                                  'cooldown': cooldown_seconds,
                                  'errors': errors,
@@ -82,10 +84,40 @@ def player_api_response(player, cooldown_seconds, errors=None, messages=None):
                              'messages': messages}, safe=True)
     return response
 
+def item_examine_api_response(item, cooldown_seconds, errors=None, messages=None):
+    if errors is None:
+        errors = []
+    if messages is None:
+        messages = []
+    response = JsonResponse({'name':item.name,
+                             'description':item.description,
+                             'weight':item.weight,
+                             'itemtype':item.itemtype,
+                             'level':item.level,
+                             'exp':item.exp,
+                             'attributes':item.attributes,
+                             'cooldown': cooldown_seconds,
+                             'errors': errors,
+                             'messages': messages}, safe=True)
+    return response
+
+def player_examine_api_response(player, cooldown_seconds, errors=None, messages=None):
+    if errors is None:
+        errors = []
+    if messages is None:
+        messages = []
+    response = JsonResponse({'name':player.name,
+                             'description':player.name + player.description,
+                             'cooldown': cooldown_seconds,
+                             'errors': errors,
+                             'messages': messages}, safe=True)
+    return response
+
 
 def get_cooldown(player, cooldown_scale):
     speed_adjustment = player.speed - 10
     time_factor = float(config('TIME_SCALE'))
+    time_factor = 1.0
     if player.is_pm:
         time_factor = min(time_factor, 5)
     return max(MIN_COOLDOWN, cooldown_scale * time_factor - speed_adjustment)
@@ -214,6 +246,44 @@ def drop(request):
 
 
 @api_view(["POST"])
+def examine(request):
+    player = request.user.player
+    data = json.loads(request.body)
+
+    cooldown_error = check_cooldown_error(player)
+    if cooldown_error is not None:
+        return cooldown_error
+
+    alias = data['name']
+    room = player.room()
+    # import pdb; pdb.set_trace()
+    item = room.findItemByAlias(alias)
+    if item is None:
+        item = player.findItemByAlias(alias)
+    players = room.findPlayerByName(alias)
+    cooldown_seconds = get_cooldown(player, 0.5)
+    errors = []
+    messages = []
+    if item is not None:
+        # Examine item
+        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.save()
+        return item_examine_api_response(item, cooldown_seconds, errors=errors, messages=messages)
+    if len(players) > 0:
+        # Examine player
+        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.save()
+        return player_examine_api_response(players[0], cooldown_seconds, errors=errors, messages=messages)
+    cooldown_seconds += PENALTY_NOT_FOUND
+    errors.append(f"Item not found: +{PENALTY_NOT_FOUND}s CD")
+    player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+    player.save()
+    return api_response(player, cooldown_seconds, errors=errors, messages=messages)
+
+
+
+
+@api_view(["POST"])
 def status(request):
     player = request.user.player
 
@@ -221,7 +291,7 @@ def status(request):
     if cooldown_error is not None:
         return cooldown_error
 
-    cooldown_seconds = get_cooldown(player, 0.2)
+    cooldown_seconds = get_cooldown(player, 0)
 
     return player_api_response(player, cooldown_seconds)
 
@@ -317,41 +387,6 @@ def remove(request):
     # player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
     # player.save()
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
-
-
-@api_view(["POST"])
-def examine(request):
-    player = request.user.player
-    data = json.loads(request.body)
-
-    cooldown_error = check_cooldown_error(player)
-    if cooldown_error is not None:
-        return cooldown_error
-
-    alias = data['name']
-    item = player.findItemByAlias(alias)
-    if item is None:
-        item = room.findItemByAlias(alias)
-    if item is None:
-        item = room.findPlayerByName(alias)
-
-    cooldown_seconds = get_cooldown(player, 0.5)
-    errors = []
-    messages = []
-    if item is None:
-        cooldown_seconds += PENALTY_NOT_FOUND
-        errors.append(f"You do not see that here: +{PENALTY_NOT_FOUND}s CD")
-    else:
-        if player.wearItem(item):
-            messages.append(f"You wear {item.name}")
-        else:
-            messages.append(f"You cannot wear {item.name}")
-    player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
-    player.save()
-    return api_response(player, cooldown_seconds, errors=errors, messages=messages)
-
-
-
 
 
 

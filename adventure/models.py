@@ -171,6 +171,8 @@ class Item(models.Model):
     attributes = models.CharField(max_length=1000, default="{}")
     level = models.IntegerField(default=1)
     exp = models.IntegerField(default=0)
+    def __str__(self):
+        return self.name
     def unsetItem(self):
         self.player = None
         self.room = None

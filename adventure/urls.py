@@ -10,4 +10,5 @@ urlpatterns = [
     url('sell', api.sell),
     url('wear', api.wear),
     url('remove', api.remove),
+    url('examine', api.examine),
 ]
