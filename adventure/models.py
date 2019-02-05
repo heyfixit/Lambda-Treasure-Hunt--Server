@@ -5,6 +5,8 @@ from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 import json
 import uuid
+import random
+import math
 
 class Room(models.Model):
     title = models.CharField(max_length=50, default="DEFAULT TITLE")
@@ -153,6 +155,10 @@ def create_user_player(sender, instance, created, **kwargs):
 def save_user_player(sender, instance, **kwargs):
     instance.player.save()
 
+
+
+
+
 class Item(models.Model):
     player = models.ForeignKey(Player, on_delete=models.CASCADE, blank=True, null=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, blank=True, null=True)
@@ -165,22 +171,32 @@ class Item(models.Model):
     attributes = models.CharField(max_length=1000, default="{}")
     level = models.IntegerField(default=1)
     exp = models.IntegerField(default=0)
-    def unsetPlayer(self):
-        if self.player is None:
-            p = self.player
-            self.player = None
-            p.save()
     def unsetItem(self):
-        self.unsetPlayer()
+        self.player = None
         self.room = None
         self.save()
     def levelUpAndRespawn(self):
-        self.unsetPlayer()
+        self.unsetItem()
         numRooms = Room.objects.count()
         randomID = random.randint(2, Room.objects.count() - 1)
         self.room = Room.objects.get(id=randomID)
-        exp += 1
-
-
-
+        self.exp += 1
+        self.level = math.floor(math.log2(self.exp)) + 1
+        self.value = self.level * 200
+        self.weight = self.level // 2 + 1
+        treasure_names = [
+            ("tiny treasure", "This is a tiny piece of treasure"),
+            ("small treasure", "This is a small piece of treasure"),
+            ("shiny treasure", "This is a shiny piece of treasure"),
+            ("great treasure", "This is a great pile of treasure"),
+            ("amazing treasure", "This is an amazing pile of treasure"),
+            ("spectacular treasure", "This is a spectacular pile of treasure"),
+            ("dazzling treasure", "This is a dazzling pile of treasure"),
+            ("brilliant treasure", "This is a brilliant pile of treasure"),
+            ("sparkling treasure" "This is a sparkling bounty of treasure")
+        ]
+        self.name = treasure_names[min(self.level - 1, len(treasure_names) - 1)][0]
+        self.description = treasure_names[min(self.level - 1, len(treasure_names) - 1)][1]
+        self.aliases = f"treasure,{self.name}"
+        self.save()
 
