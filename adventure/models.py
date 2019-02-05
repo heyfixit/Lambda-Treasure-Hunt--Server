@@ -37,9 +37,9 @@ class Room(models.Model):
             self.save()
     def playerNames(self, currentPlayerID, isPM=False):
         if isPM:
-            return [p.user.username for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID)]
+            return [p.user.username for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID) and not p.is_pm]
         else:
-            return ["ghost" for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID)]
+            return ["ghost" for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID) and not p.is_pm]
     def playerUUIDs(self, currentPlayerID):
         return [p.uuid for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID)]
     def addItem(self, item):
