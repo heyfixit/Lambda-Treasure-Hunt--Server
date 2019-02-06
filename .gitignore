@@ -15,3 +15,5 @@ db.sqlite3
 
 util/create_world_from_graph.py
 util/map.txt
+
+tmp/*
