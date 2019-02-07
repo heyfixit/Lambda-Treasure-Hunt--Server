@@ -16,6 +16,8 @@ class Room(models.Model):
     s_to = models.IntegerField(blank=True, null=True)
     e_to = models.IntegerField(blank=True, null=True)
     w_to = models.IntegerField(blank=True, null=True)
+    elevation = models.IntegerField(default=0)
+    terrain = models.CharField(max_length=32, default="NORMAL")
     def connectRooms(self, destinationRoom, direction):
         destinationRoomID = destinationRoom.id
         try:
@@ -154,8 +156,6 @@ def create_user_player(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_player(sender, instance, **kwargs):
     instance.player.save()
-
-
 
 
 
