@@ -87,6 +87,7 @@ class Player(models.Model):
     bodywear = models.IntegerField(default=0)
     footwear = models.IntegerField(default=0)
     encumbrance = models.IntegerField(default=0)
+    can_fly = models.BooleanField(default=False)
     def initialize(self):
         if self.currentRoom == 0:
             self.currentRoom = Room.objects.first().id
