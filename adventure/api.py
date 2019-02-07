@@ -15,7 +15,7 @@ pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret
 
 SHOP_ROOM_ID=1
 NAME_CHANGE_ROOM_ID=467
-
+HOLLOWAY_SHRINE_ROOM_ID=22
 
 PENALTY_COOLDOWN_VIOLATION=5
 PENALTY_NOT_FOUND=5
@@ -30,12 +30,12 @@ def check_cooldown_error(player):
     """
     Return cooldown error if cooldown is bad, None if it's valid
     """
-    if player.cooldown > timezone.now():
-        t_delta = (player.cooldown - timezone.now())
-        cooldown_seconds = min(MAX_COOLDOWN, t_delta.seconds + t_delta.microseconds / 1000000 + PENALTY_COOLDOWN_VIOLATION)
-        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
-        player.save()
-        return JsonResponse({"cooldown": cooldown_seconds, 'errors':[f"Cooldown Violation: +{PENALTY_COOLDOWN_VIOLATION}s CD"]}, safe=True, status=400)
+    # if player.cooldown > timezone.now():
+    #     t_delta = (player.cooldown - timezone.now())
+    #     cooldown_seconds = min(MAX_COOLDOWN, t_delta.seconds + t_delta.microseconds / 1000000 + PENALTY_COOLDOWN_VIOLATION)
+    #     player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+    #     player.save()
+    #     return JsonResponse({"cooldown": cooldown_seconds, 'errors':[f"Cooldown Violation: +{PENALTY_COOLDOWN_VIOLATION}s CD"]}, safe=True, status=400)
     return None
 
 def api_response(player, cooldown_seconds, errors=None, messages=None):
@@ -423,6 +423,86 @@ def change_name(request):
         player.save()
         messages.append(f"You have changed your name to {new_name}.")
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
+
+
+
+
+@api_view(["POST"])
+def pray(request):
+    player = request.user.player
+
+    cooldown_error = check_cooldown_error(player)
+    if cooldown_error is not None:
+        return cooldown_error
+
+    cooldown_seconds = get_cooldown(player, 5.0)
+    errors = []
+    messages = []
+    if player.currentRoom != HOLLOWAY_SHRINE_ROOM_ID:
+        cooldown_seconds += 5 * PENALTY_NOT_FOUND
+        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.save()
+        errors.append("Shrine not found: +{5 * PENALTY_NOT_FOUND}")
+    else:
+        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.can_fly = True
+        player.save()
+        messages.append(f"You notice your body starts to hover above the ground.")
+    return api_response(player, cooldown_seconds, errors=errors, messages=messages)
+
+
+
+
+
+@api_view(["POST"])
+def fly(request):
+    player = request.user.player
+    data = json.loads(request.body)
+
+    cooldown_error = check_cooldown_error(player)
+    if cooldown_error is not None:
+        return cooldown_error
+
+    dirs={"n": "north", "s": "south", "e": "east", "w": "west"}
+    reverse_dirs = {"n": "south", "s": "north", "e": "west", "w": "east"}
+    direction = data['direction']
+    room = player.room()
+    nextRoomID = None
+    cooldown_seconds = get_cooldown(player, 1.0)
+    errors = []
+    messages = []
+    if direction == "n":
+        nextRoomID = room.n_to
+    elif direction == "s":
+        nextRoomID = room.s_to
+    elif direction == "e":
+        nextRoomID = room.e_to
+    elif direction == "w":
+        nextRoomID = room.w_to
+    if nextRoomID is not None and nextRoomID >= 0:
+        nextRoom = Room.objects.get(id=nextRoomID)
+        player.currentRoom=nextRoomID
+        messages.append(f"You have flown {dirs[direction]}.")
+        elevation_change = player.room().elevation - room.elevation
+        if player.strength <= player.encumbrance:
+            messages.append(f"Flying while Heavily Encumbered: +200% CD")
+            cooldown_seconds *= 3
+        elif elevation_change < 0:
+            cooldown_seconds = 1.0
+        if 'next_room_id' in data:
+            if data['next_room_id'].isdigit() and int(data['next_room_id']) == nextRoomID:
+                messages.append(f"Wise Explorer: -50% CD")
+                cooldown_seconds /= 2
+            else:
+                messages.append(f"Foolish Explorer: +50% CD")
+                cooldown_seconds *= 1.5
+    else:
+        cooldown_seconds += PENALTY_CANNOT_MOVE_THAT_WAY
+        errors.append(f"You cannot move that way: +{PENALTY_CANNOT_MOVE_THAT_WAY}s CD")
+    player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+    player.save()
+    return api_response(player, cooldown_seconds, errors=errors, messages=messages)
+
 
 
 
