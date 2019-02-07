@@ -488,7 +488,11 @@ def fly(request):
             messages.append(f"Flying while Heavily Encumbered: +200% CD")
             cooldown_seconds *= 3
         elif elevation_change < 0:
+            messages.append(f"Downhill Flight Bonus: Instant CD")
             cooldown_seconds = 1.0
+        else:
+            messages.append(f"Flight Bonus: -10% CD")
+            cooldown_seconds *= 0.9
         if 'next_room_id' in data:
             if data['next_room_id'].isdigit() and int(data['next_room_id']) == nextRoomID:
                 messages.append(f"Wise Explorer: -50% CD")
