@@ -21,6 +21,7 @@ PENALTY_COOLDOWN_VIOLATION=5
 PENALTY_NOT_FOUND=5
 PENALTY_CANNOT_MOVE_THAT_WAY=5
 PENALTY_TOO_HEAVY=5
+PENALTY_UPHILL = 5
 
 MIN_COOLDOWN = 1
 MAX_COOLDOWN = 600
@@ -170,6 +171,10 @@ def move(request):
         nextRoom = Room.objects.get(id=nextRoomID)
         player.currentRoom=nextRoomID
         messages.append(f"You have walked {dirs[direction]}.")
+        elevation_change = player.room().elevation - room.elevation
+        if elevation_change > 0:
+            messages.append(f"Uphill Penalty: {PENALTY_UPHILL}s CD")
+            cooldown_seconds += PENALTY_UPHILL
         if player.strength <= player.encumbrance:
             messages.append(f"Heavily Encumbered: +100% CD")
             cooldown_seconds *= 2
