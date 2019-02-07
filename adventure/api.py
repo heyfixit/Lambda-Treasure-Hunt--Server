@@ -23,6 +23,8 @@ PENALTY_CANNOT_MOVE_THAT_WAY=5
 PENALTY_TOO_HEAVY=5
 PENALTY_UPHILL = 5
 
+PENALTY_BLASPHEMY = 10
+
 MIN_COOLDOWN = 1
 MAX_COOLDOWN = 600
 
@@ -30,12 +32,12 @@ def check_cooldown_error(player):
     """
     Return cooldown error if cooldown is bad, None if it's valid
     """
-    # if player.cooldown > timezone.now():
-    #     t_delta = (player.cooldown - timezone.now())
-    #     cooldown_seconds = min(MAX_COOLDOWN, t_delta.seconds + t_delta.microseconds / 1000000 + PENALTY_COOLDOWN_VIOLATION)
-    #     player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
-    #     player.save()
-    #     return JsonResponse({"cooldown": cooldown_seconds, 'errors':[f"Cooldown Violation: +{PENALTY_COOLDOWN_VIOLATION}s CD"]}, safe=True, status=400)
+    if player.cooldown > timezone.now():
+        t_delta = (player.cooldown - timezone.now())
+        cooldown_seconds = min(MAX_COOLDOWN, t_delta.seconds + t_delta.microseconds / 1000000 + PENALTY_COOLDOWN_VIOLATION)
+        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.save()
+        return JsonResponse({"cooldown": cooldown_seconds, 'errors':[f"Cooldown Violation: +{PENALTY_COOLDOWN_VIOLATION}s CD"]}, safe=True, status=400)
     return None
 
 def api_response(player, cooldown_seconds, errors=None, messages=None):
@@ -479,7 +481,11 @@ def fly(request):
         nextRoomID = room.e_to
     elif direction == "w":
         nextRoomID = room.w_to
-    if nextRoomID is not None and nextRoomID >= 0:
+    print("HERE")
+    if not player.can_fly:
+        cooldown_seconds += PENALTY_BLASPHEMY
+        errors.append(f"You cannot fly: +{PENALTY_BLASPHEMY}s CD")
+    elif nextRoomID is not None and nextRoomID >= 0:
         nextRoom = Room.objects.get(id=nextRoomID)
         player.currentRoom=nextRoomID
         messages.append(f"You have flown {dirs[direction]}.")
@@ -506,9 +512,4 @@ def fly(request):
     player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
     player.save()
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
-
-
-
-
-
 
