@@ -24,6 +24,8 @@ PENALTY_CANNOT_MOVE_THAT_WAY=5
 PENALTY_TOO_HEAVY=5
 PENALTY_UPHILL = 5
 
+PENALTY_BAD_DASH = 20
+
 PENALTY_BLASPHEMY = 10
 
 MIN_COOLDOWN = 1
@@ -539,48 +541,51 @@ def dash(request):
     dirs={"n": "north", "s": "south", "e": "east", "w": "west"}
     reverse_dirs = {"n": "south", "s": "north", "e": "west", "w": "east"}
     direction = data['direction']
-    room = player.room()
-    nextRoomID = None
+    room_ids = data['next_room_ids'].split(",")
+    room_int_ids = [r for r in room_ids if r.isdigit()]
+    num_rooms = data['num_rooms']
     cooldown_seconds = get_cooldown(player, 1.0)
     errors = []
     messages = []
-    if direction == "n":
-        nextRoomID = room.n_to
-    elif direction == "s":
-        nextRoomID = room.s_to
-    elif direction == "e":
-        nextRoomID = room.e_to
-    elif direction == "w":
-        nextRoomID = room.w_to
     if not player.can_dash:
         cooldown_seconds += PENALTY_BLASPHEMY
-        errors.append(f"You cannot fly: +{PENALTY_BLASPHEMY}s CD")
-    elif nextRoomID is not None and nextRoomID >= 0:
-        nextRoom = Room.objects.get(id=nextRoomID)
-        player.currentRoom=nextRoomID
-        messages.append(f"You have flown {dirs[direction]}.")
-        elevation_change = player.room().elevation - room.elevation
-        if player.strength <= player.encumbrance:
-            messages.append(f"Flying while Heavily Encumbered: +200% CD")
-            cooldown_seconds *= 3
-        elif elevation_change < 0:
-            messages.append(f"Downhill Flight Bonus: Instant CD")
-            cooldown_seconds = 1.0
-        else:
-            messages.append(f"Flight Bonus: -10% CD")
-            cooldown_seconds *= 0.9
-        if 'next_room_id' in data:
-            if data['next_room_id'].isdigit() and int(data['next_room_id']) == nextRoomID:
-                messages.append(f"Wise Explorer: -50% CD")
-                cooldown_seconds /= 2
-            else:
-                messages.append(f"Foolish Explorer: +50% CD")
-                cooldown_seconds *= 1.5
-        if nextRoom.terrain == "MOUNTAIN" and len(Player.objects.filter(id=1)) > 0:
-            pusher.trigger(f'p-channel-{Player.objects.get(id=1).uuid}', u'broadcast', {'message':f'{player.name} has flown {dirs[direction]} to room {nextRoom.id}.'})
+        errors.append(f"You cannot dash: +{PENALTY_BLASPHEMY}s CD")
+    elif not (num_rooms.isdigit() and int(num_rooms) == len(room_ids) and len(room_int_ids) == int(num_rooms)):
+        cooldown_seconds += PENALTY_BAD_DASH
+        errors.append(f"Malformed Dash: +{PENALTY_BAD_DASH}s CD")
     else:
-        cooldown_seconds += PENALTY_CANNOT_MOVE_THAT_WAY
-        errors.append(f"You cannot move that way: +{PENALTY_CANNOT_MOVE_THAT_WAY}s CD")
+        for room_id in room_int_ids:
+            room = player.room()
+            if direction == "n":
+                nextRoomID = room.n_to
+            elif direction == "s":
+                nextRoomID = room.s_to
+            elif direction == "e":
+                nextRoomID = room.e_to
+            elif direction == "w":
+                nextRoomID = room.w_to
+            else:
+                cooldown_seconds += PENALTY_BAD_DASH
+                errors.append(f"Bad Dash: +{PENALTY_BAD_DASH}s CD")
+            if int(nextRoomID) == int(room_id):
+                player.currentRoom = nextRoomID
+                cooldown_seconds += 0.5
+                messages.append(f"You have dashed to room {nextRoomID}.")
+
+                elevation_change = player.room().elevation - room.elevation
+                if player.strength <= player.encumbrance:
+                    messages.append(f"Dashing while Heavily Encumbered: +1s CD")
+                    cooldown_seconds += 1
+                if elevation_change < 0:
+                    messages.append(f"Downhill Dash Bonus: Instant CD")
+                    cooldown_seconds -= 0.5
+                elif elevation_change > 0:
+                    messages.append(f"Uphill Dash Penalty: +0.5s")
+                    cooldown_seconds += 0.5
+            else:
+                cooldown_seconds += PENALTY_BAD_DASH
+                errors.append(f"Bad Dash: +{PENALTY_BAD_DASH}s CD")
+                break
     player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
     player.save()
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
