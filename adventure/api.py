@@ -612,7 +612,7 @@ def dash(request):
 
 
 
-@api_view(["POST"])
+@api_view(["GET"])
 def player_state(request):
     player = request.user.player
     if not player.is_pm:
