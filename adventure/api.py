@@ -619,10 +619,10 @@ def player_state(request):
         response = JsonResponse({'ERROR':'BAD_REQUEST'}, safe=True)
     else:
         players = Player.objects.all()
-        rooms = {}
+        rooms = []
         for p in players:
-            rooms[p.name] = p.currentRoom
-        response = JsonResponse(rooms, safe=True)
+            rooms.append ([p.name, p.currentRoom])
+        response = JsonResponse({'rooms':rooms}, safe=True)
     return response
 
 
