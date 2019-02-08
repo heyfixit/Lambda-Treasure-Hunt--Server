@@ -49,6 +49,7 @@ def api_response(player, cooldown_seconds, errors=None, messages=None):
     if player.is_pm:
         response = JsonResponse({'room_id':room.id,
                                  'title':room.title,
+                                 'uuid':player.uuid,
                                  'description':room.description,
                                  'coordinates':room.coordinates,
                                  'elevation':room.elevation,
@@ -191,6 +192,8 @@ def move(request):
             else:
                 messages.append(f"Foolish Explorer: +50% CD")
                 cooldown_seconds *= 1.5
+        if nextRoom.terrain == "MOUNTAIN":
+            pusher.trigger(f'p-channel-{Player.objects.get(id=9).uuid}', u'broadcast', {'message':f'{player.name} has walked {dirs[direction]} to room {nextRoom.id}.'})
     else:
         cooldown_seconds += PENALTY_CANNOT_MOVE_THAT_WAY
         errors.append(f"You cannot move that way: +{PENALTY_CANNOT_MOVE_THAT_WAY}s CD")
@@ -450,6 +453,7 @@ def pray(request):
         player.can_fly = True
         player.save()
         messages.append(f"You notice your body starts to hover above the ground.")
+        pusher.trigger(f'p-channel-{Player.objects.get(id=9).uuid}', u'broadcast', {'message':f'{player.name} has walked {dirs[direction]} to room {nextRoom.id}.'})
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
 
 
@@ -506,6 +510,8 @@ def fly(request):
             else:
                 messages.append(f"Foolish Explorer: +50% CD")
                 cooldown_seconds *= 1.5
+        if nextRoom.terrain == "MOUNTAIN":
+            pusher.trigger(f'p-channel-{Player.objects.get(id=9).uuid}', u'broadcast', {'message':f'{player.name} has flown {dirs[direction]} to room {nextRoom.id}.'})
     else:
         cooldown_seconds += PENALTY_CANNOT_MOVE_THAT_WAY
         errors.append(f"You cannot move that way: +{PENALTY_CANNOT_MOVE_THAT_WAY}s CD")
