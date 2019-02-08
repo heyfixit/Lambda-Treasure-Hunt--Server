@@ -23,6 +23,9 @@ PENALTY_NOT_FOUND=5
 PENALTY_CANNOT_MOVE_THAT_WAY=5
 PENALTY_TOO_HEAVY=5
 PENALTY_UPHILL = 5
+PENALTY_TRAP = 30
+
+PENALTY_CAVE_FLY = 10
 
 PENALTY_BAD_DASH = 20
 
@@ -188,6 +191,9 @@ def move(request):
         if player.strength <= player.encumbrance:
             messages.append(f"Heavily Encumbered: +100% CD")
             cooldown_seconds *= 2
+        if nextRoom.terrain == "TRAP":
+            messages.append(f"It's a trap!: +{PENALTY_TRAP}s CD")
+            cooldown_seconds += PENALTY_TRAP
         if 'next_room_id' in data:
             if data['next_room_id'].isdigit() and int(data['next_room_id']) == nextRoomID:
                 messages.append(f"Wise Explorer: -50% CD")
@@ -508,9 +514,15 @@ def fly(request):
         elif elevation_change < 0:
             messages.append(f"Downhill Flight Bonus: Instant CD")
             cooldown_seconds = 1.0
+        elif nextRoom.terrain == "CAVE":
+            messages.append(f"You bump your head on the cave ceiling: +{PENALTY_CAVE_FLY}s CD")
+            cooldown_seconds += PENALTY_CAVE_FLY
         else:
             messages.append(f"Flight Bonus: -10% CD")
             cooldown_seconds *= 0.9
+        if nextRoom.terrain == "TRAP":
+            messages.append(f"It's a trap!: +{PENALTY_TRAP}s CD")
+            cooldown_seconds += PENALTY_TRAP
         if 'next_room_id' in data:
             if data['next_room_id'].isdigit() and int(data['next_room_id']) == nextRoomID:
                 messages.append(f"Wise Explorer: -50% CD")
@@ -586,6 +598,10 @@ def dash(request):
                 cooldown_seconds += PENALTY_BAD_DASH
                 errors.append(f"Bad Dash: +{PENALTY_BAD_DASH}s CD")
                 break
+        if player.room().terrain == "TRAP":
+            messages.append(f"It's a trap!: +{PENALTY_TRAP}s CD")
+            cooldown_seconds += PENALTY_TRAP
+
     player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
     player.save()
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
