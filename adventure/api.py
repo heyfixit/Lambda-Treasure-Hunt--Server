@@ -192,7 +192,7 @@ def move(request):
             else:
                 messages.append(f"Foolish Explorer: +50% CD")
                 cooldown_seconds *= 1.5
-        if nextRoom.terrain == "MOUNTAIN":
+        if nextRoom.terrain == "MOUNTAIN" and len(Player.objects.filter(id=9)) > 0:
             pusher.trigger(f'p-channel-{Player.objects.get(id=9).uuid}', u'broadcast', {'message':f'{player.name} has walked {dirs[direction]} to room {nextRoom.id}.'})
     else:
         cooldown_seconds += PENALTY_CANNOT_MOVE_THAT_WAY
@@ -453,7 +453,8 @@ def pray(request):
         player.can_fly = True
         player.save()
         messages.append(f"You notice your body starts to hover above the ground.")
-        pusher.trigger(f'p-channel-{Player.objects.get(id=9).uuid}', u'broadcast', {'message':f'{player.name} has walked {dirs[direction]} to room {nextRoom.id}.'})
+        if len(Player.objects.filter(id=9)) > 0:
+            pusher.trigger(f'p-channel-{Player.objects.get(id=9).uuid}', u'broadcast', {'message':f'{player.name} has walked {dirs[direction]} to room {nextRoom.id}.'})
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
 
 
@@ -485,7 +486,6 @@ def fly(request):
         nextRoomID = room.e_to
     elif direction == "w":
         nextRoomID = room.w_to
-    print("HERE")
     if not player.can_fly:
         cooldown_seconds += PENALTY_BLASPHEMY
         errors.append(f"You cannot fly: +{PENALTY_BLASPHEMY}s CD")
@@ -510,8 +510,8 @@ def fly(request):
             else:
                 messages.append(f"Foolish Explorer: +50% CD")
                 cooldown_seconds *= 1.5
-        if nextRoom.terrain == "MOUNTAIN":
-            pusher.trigger(f'p-channel-{Player.objects.get(id=9).uuid}', u'broadcast', {'message':f'{player.name} has flown {dirs[direction]} to room {nextRoom.id}.'})
+        if nextRoom.terrain == "MOUNTAIN" and len(Player.objects.filter(id=1)) > 0:
+            pusher.trigger(f'p-channel-{Player.objects.get(id=1).uuid}', u'broadcast', {'message':f'{player.name} has flown {dirs[direction]} to room {nextRoom.id}.'})
     else:
         cooldown_seconds += PENALTY_CANNOT_MOVE_THAT_WAY
         errors.append(f"You cannot move that way: +{PENALTY_CANNOT_MOVE_THAT_WAY}s CD")
