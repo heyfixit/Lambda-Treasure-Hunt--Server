@@ -622,7 +622,7 @@ def player_state(request):
         rooms = {}
         for p in players:
             rooms[p.name] = p.currentRoom
-        response = JsonResponse({'room_id':rooms}, safe=True)
+        response = JsonResponse(rooms, safe=True)
     return response
 
 
