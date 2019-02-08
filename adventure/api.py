@@ -526,3 +526,61 @@ def fly(request):
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
 
 
+
+@api_view(["POST"])
+def dash(request):
+    player = request.user.player
+    data = json.loads(request.body)
+
+    cooldown_error = check_cooldown_error(player)
+    if cooldown_error is not None:
+        return cooldown_error
+
+    dirs={"n": "north", "s": "south", "e": "east", "w": "west"}
+    reverse_dirs = {"n": "south", "s": "north", "e": "west", "w": "east"}
+    direction = data['direction']
+    room = player.room()
+    nextRoomID = None
+    cooldown_seconds = get_cooldown(player, 1.0)
+    errors = []
+    messages = []
+    if direction == "n":
+        nextRoomID = room.n_to
+    elif direction == "s":
+        nextRoomID = room.s_to
+    elif direction == "e":
+        nextRoomID = room.e_to
+    elif direction == "w":
+        nextRoomID = room.w_to
+    if not player.can_dash:
+        cooldown_seconds += PENALTY_BLASPHEMY
+        errors.append(f"You cannot fly: +{PENALTY_BLASPHEMY}s CD")
+    elif nextRoomID is not None and nextRoomID >= 0:
+        nextRoom = Room.objects.get(id=nextRoomID)
+        player.currentRoom=nextRoomID
+        messages.append(f"You have flown {dirs[direction]}.")
+        elevation_change = player.room().elevation - room.elevation
+        if player.strength <= player.encumbrance:
+            messages.append(f"Flying while Heavily Encumbered: +200% CD")
+            cooldown_seconds *= 3
+        elif elevation_change < 0:
+            messages.append(f"Downhill Flight Bonus: Instant CD")
+            cooldown_seconds = 1.0
+        else:
+            messages.append(f"Flight Bonus: -10% CD")
+            cooldown_seconds *= 0.9
+        if 'next_room_id' in data:
+            if data['next_room_id'].isdigit() and int(data['next_room_id']) == nextRoomID:
+                messages.append(f"Wise Explorer: -50% CD")
+                cooldown_seconds /= 2
+            else:
+                messages.append(f"Foolish Explorer: +50% CD")
+                cooldown_seconds *= 1.5
+        if nextRoom.terrain == "MOUNTAIN" and len(Player.objects.filter(id=1)) > 0:
+            pusher.trigger(f'p-channel-{Player.objects.get(id=1).uuid}', u'broadcast', {'message':f'{player.name} has flown {dirs[direction]} to room {nextRoom.id}.'})
+    else:
+        cooldown_seconds += PENALTY_CANNOT_MOVE_THAT_WAY
+        errors.append(f"You cannot move that way: +{PENALTY_CANNOT_MOVE_THAT_WAY}s CD")
+    player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+    player.save()
+    return api_response(player, cooldown_seconds, errors=errors, messages=messages)
