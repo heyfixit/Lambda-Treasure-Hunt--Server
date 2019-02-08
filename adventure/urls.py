@@ -14,4 +14,5 @@ urlpatterns = [
     url('change_name', api.change_name),
     url('pray', api.pray),
     url('fly', api.fly),
+    url('dash', api.dash),
 ]
