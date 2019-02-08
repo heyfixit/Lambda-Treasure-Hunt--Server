@@ -605,3 +605,32 @@ def dash(request):
     player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
     player.save()
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
+
+
+
+
+
+
+
+@api_view(["POST"])
+def player_state(request):
+    player = request.user.player
+    if not player.is_pm:
+        response = JsonResponse({'ERROR':'BAD_REQUEST'}, safe=True)
+    else:
+        players = Player.objects.all()
+        rooms = {}
+        for p in players:
+            rooms[p.name] = p.currentRoom
+        response = JsonResponse({'room_id':rooms}, safe=True)
+    return response
+
+
+
+
+
+
+
+
+
+
