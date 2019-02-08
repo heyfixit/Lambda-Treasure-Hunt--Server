@@ -519,3 +519,4 @@ def fly(request):
     player.save()
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
 
+
