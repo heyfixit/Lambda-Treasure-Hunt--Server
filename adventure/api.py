@@ -451,11 +451,16 @@ def pray(request):
         messages.append(f"You notice your body starts to hover above the ground.")
         if len(Player.objects.filter(id=9)) > 0:
             pusher.trigger(f'p-channel-{Player.objects.get(id=9).uuid}', u'broadcast', {'message':f'{player.name} has prayed.'})
+    elif player.currentRoom == BRADY_SHRINE_ROOM_ID:
+        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.can_dash = True
+        player.save()
+        messages.append(f"You feel a mysterious power and speed coiling in your legs.")
     else:
         cooldown_seconds += 5 * PENALTY_NOT_FOUND
         player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
         player.save()
-        errors.append("Shrine not found: +{5 * PENALTY_NOT_FOUND}")
+        errors.append(f"Shrine not found: +{5 * PENALTY_NOT_FOUND}")
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
 
 
