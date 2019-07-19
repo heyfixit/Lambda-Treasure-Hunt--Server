@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'adventure',
+    'adv_blockchain',
     'api',
     'corsheaders',
     'rest_framework',
