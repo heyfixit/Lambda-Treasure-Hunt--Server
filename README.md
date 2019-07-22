@@ -55,7 +55,7 @@
 "messages": ["You have walked west."]}
 ```
 
-## 4. Add player to a group (custom cooldown)
+## 5. Add player to a group (custom cooldown)
 * `./manage.py shell`
 * `p = Player.objects.get(name="testuser")`
 * `g = Group.objects.get(name="default")`
