@@ -14,12 +14,16 @@
 
 ## 3. Create a user
 * `curl -X POST -H "Content-Type: application/json" -d '{"username":"testuser", "password1":"testpassword", "password2":"testpassword"}' localhost:8000/api/registration/`
-  * Response: `{"key":"1d52b631a2325f5816d094e7ccf82dbfe4416544"}`
+```
+# Response
+{"key":"1d52b631a2325f5816d094e7ccf82dbfe4416544"}
+```
 
 ## 4. Move around
 
 * `curl -X GET -H 'Authorization: Token 1d52b631a2325f5816d094e7ccf82dbfe4416544' localhost:8000/api/adv/init/`
 ```
+# Response
 {"room_id": 0,
 "title": "A brightly lit room",
 "description": "You are standing in the center of a brightly lit room. You notice a shop to the west and exits to the north, south and east.",
@@ -36,6 +40,7 @@
 
 * `curl -X POST -H 'Authorization: Token 1d52b631a2325f5816d094e7ccf82dbfe4416544' -H "Content-Type: application/json" -d '{"direction":"w"}' localhost:8000/api/adv/move/`
 ```
+# Response
 {"room_id": 1,
 "title": "Shop",
 "description": "You are standing in a small shop. A sign behind the mechanical shopkeeper says 'WILL PAY FOR TREASURE'.",
