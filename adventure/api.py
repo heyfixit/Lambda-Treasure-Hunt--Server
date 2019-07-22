@@ -31,8 +31,8 @@ PENALTY_BAD_DASH = 20
 
 PENALTY_BLASPHEMY = 10
 
-MIN_COOLDOWN = 1
-MAX_COOLDOWN = 600
+MIN_COOLDOWN = 1.0
+MAX_COOLDOWN = 600.0
 
 def check_cooldown_error(player):
     """
