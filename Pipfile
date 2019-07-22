@@ -16,6 +16,7 @@ django-heroku = "*"
 django-rest-api = "*"
 celery = "*"
 dj-database-url = "*"
+"psycopg2-binary" = "*"
 
 [dev-packages]
 
