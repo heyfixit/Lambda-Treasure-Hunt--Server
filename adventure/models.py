@@ -13,7 +13,6 @@ class Group(models.Model):
     name = models.CharField(max_length=20, unique=True)
 
 class Room(models.Model):
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
     title = models.CharField(max_length=50, default="DEFAULT TITLE")
     description = models.CharField(max_length=500, default="DEFAULT DESCRIPTION")
     coordinates = models.CharField(max_length=32, default="()")
