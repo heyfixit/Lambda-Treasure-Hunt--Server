@@ -3,9 +3,9 @@ from adventure.models import Player, Room, Item, Group
 import random
 
 Group.objects.all().delete()
-g = Group(name="admin")
+g = Group(name="admin", cooldown=2)
 g.save()
-g = Group(name="default")
+g = Group(name="default", cooldown=10)
 g.save()
 
 
