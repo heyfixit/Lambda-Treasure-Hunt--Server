@@ -204,3 +204,13 @@ class Item(models.Model):
         self.aliases = f"treasure,{self.name}"
         self.save()
 
+
+
+class Class(models.Model):
+    name = models.CharField(max_length=20, unique=True)
+
+
+
+
+
+
