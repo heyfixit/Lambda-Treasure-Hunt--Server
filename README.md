@@ -50,9 +50,34 @@
 "players": [],
 "items": ["tiny treasure"],
 "exits": ["e"],
-"cooldown": 5.0,
+"cooldown": 60.0,
 "errors": [],
 "messages": ["You have walked west."]}
 ```
+
+## 4. Add player to a group (custom cooldown)
+* `./manage.py shell`
+* `p = Player.objects.get(name="testuser")`
+* `g = Group.objects.get(name="default")`
+* `p.group = g`
+* `p.save()`
+* `exit()`
+* `curl -X POST -H 'Authorization: Token 1d52b631a2325f5816d094e7ccf82dbfe4416544' -H "Content-Type: application/json" -d '{"direction":"e"}' localhost:8000/api/adv/move/`
+```
+# Response
+{"room_id": 0,
+"title": "A brightly lit room",
+"description": "You are standing in the center of a brightly lit room. You notice a shop to the west and exits to the north, south and east.",
+"coordinates": "(60,60)",
+"elevation": 0,
+"terrain": "NORMAL",
+"players": [],
+"items": ["boots", "jacket"],
+"exits": ["n", "s", "e", "w"],
+"cooldown": 10.0,
+"errors": [],
+"messages": ["You have walked east."]}
+```
+
 
 
