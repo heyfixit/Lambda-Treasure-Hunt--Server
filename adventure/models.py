@@ -11,6 +11,7 @@ import math
 
 class Group(models.Model):
     name = models.CharField(max_length=20, unique=True)
+    cooldown = models.IntegerField(default=60)
 
 class Room(models.Model):
     title = models.CharField(max_length=50, default="DEFAULT TITLE")
@@ -78,7 +79,7 @@ class Room(models.Model):
         return exits
 
 class Player(models.Model):
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=False, default=1)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=64, unique=True, null=True)
     is_pm = models.BooleanField(default=False)
@@ -167,7 +168,7 @@ def save_user_player(sender, instance, **kwargs):
 
 
 class Item(models.Model):
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=False, default=1)
     player = models.ForeignKey(Player, on_delete=models.CASCADE, blank=True, null=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=20, default="DEFAULT_ITEM")
