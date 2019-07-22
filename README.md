@@ -57,6 +57,7 @@
 
 ## 5. Add player to a group (custom cooldown)
 * `./manage.py shell`
+* `from adventure.models import Player, Room, Item, Group`
 * `p = Player.objects.get(name="testuser")`
 * `g = Group.objects.get(name="default")`
 * `p.group = g`
