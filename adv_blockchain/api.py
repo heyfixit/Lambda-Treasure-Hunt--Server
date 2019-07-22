@@ -1,11 +1,12 @@
 from django.http import JsonResponse
-from .models import Blockchain
+from .models import Block
+from django.core import serializers
 
 
 def mine(request):
     # Get the blockchain from the database
     # For now, assume there is only one and get that
-    blockchain = Blockchain.objects.all()[:1].get()
+    blockchain = Block.objects.all()
     # Determine if proof is valid
     last_block = blockchain.last_block
     last_proof = last_block['proof']
@@ -46,7 +47,7 @@ def mine(request):
 def new_transaction(request):
     # Get the blockchain from the database
     # For now, assume there is only one and get that
-    blockchain = Blockchain.objects.all()[:1].get()
+    blockchain = Block.objects.all()
 
     values = request.get_json()
 
@@ -64,22 +65,20 @@ def new_transaction(request):
     return JsonResponse(response)
 
 
-def full_chain():
+def full_chain(request):
     # Get the blockchain from the database
     # For now, assume there is only one and get that
-    blockchain = Blockchain.objects.all()[:1].get()
+    blockchain = Block.objects.all()
 
-    response = {
-        'chain': blockchain.chain,
-        'length': len(blockchain.chain),
-    }
-    return JsonResponse(response)
+    data = serializers.serialize('json', blockchain)
+
+    return JsonResponse(data, safe=False)
 
 
-def last_proof():
+def last_proof(request):
     # Get the blockchain from the database
     # For now, assume there is only one and get that
-    blockchain = Blockchain.objects.all()[:1].get()
+    blockchain = Block.objects.all()
 
     last_proof_value = blockchain.last_block.get('proof')
     response = {

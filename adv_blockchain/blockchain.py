@@ -6,17 +6,17 @@ from uuid import uuid4
 from urllib.parse import urlparse
 import requests
 
+from .models import Block, Transaction
+
 
 class Blockchain(object):
     def __init__(self):
-        self.chain = []
-        self.current_transactions = []
-        self.nodes = set()
-        self.genesis_block()
-
-        # Don't create a block automatically.  If we do,
-        # every node will have a different anchor
-        # self.new_block(previous_hash=1, proof=99)  # 99 is faster for 1st
+        # Assume chain 0 is the chain
+        self.chain = Block.objects.all()
+        # self.current_transactions = chain.current_transactions
+        breakpoint()
+        if self.chain[:1].get() is None:
+            self.genesis_block()
 
     def genesis_block(self):
         """
@@ -27,13 +27,8 @@ class Blockchain(object):
 
         It is normally hard-coded
         """
-        block = {
-            'index': 1,
-            'timestamp': 0,
-            'transactions': [],
-            'proof': 99,  # 99 is faster for 1st proof gen
-            'previous_hash': 1,
-        }
+        block = Block(proof=1, previous_hash=1)
+        block.save()
 
         self.chain.append(block)
 
@@ -46,33 +41,16 @@ class Blockchain(object):
         :return: <dict> New Block
         """
 
-        block = {
-            'index': len(self.chain) + 1,
-            'timestamp': time(),
-            'transactions': self.current_transactions,
-            'proof': proof,
-            'previous_hash': previous_hash,
-        }
+        current_transactions = Transaction.object.filter(executed=False)
+        block = Block(transactions=current_transactions,
+                      proof=proof,
+                      previous_hash=previous_hash)
+        block.save()
 
         # Reset the current list of transactions
-        self.current_transactions = []
+        current_transactions.update(executed=True)
 
-        self.chain.append(block)
         return block
-
-    def add_block(self, block):
-        """
-        Add a received Block to the end of the Blockchain
-
-        :param block: <Block> The validated Block sent by another node in the
-        network
-        """
-
-        # Reset the current list of transactions.  TODO: Handle pending
-        # transactions
-        self.current_transactions = []
-
-        self.chain.append(block)
 
     def new_transaction(self, sender, recipient, amount):
         """
@@ -81,16 +59,15 @@ class Blockchain(object):
         :param sender: <str> Address of the Recipient
         :param recipient: <str> Address of the Recipient
         :param amount: <int> Amount
-        :return: <int> The index of the BLock that will hold this transaction
+        :return: <int> The index of the Block that will hold this transaction
         """
 
-        self.current_transactions.append({
-            'sender': sender,
-            'recipient': recipient,
-            'amount': amount,
-        })
+        transaction = Transaction(sender=sender,
+                                  recipient=recipient,
+                                  amount=amount)
+        transaction.save()
 
-        return self.last_block['index'] + 1
+        return transaction
 
     @staticmethod
     def hash(block):
@@ -111,58 +88,41 @@ class Blockchain(object):
     def last_block(self):
         return self.chain[-1]
 
-    def proof_of_work(self, last_proof):
-        """
-        Simple Proof of Work Algorithm
-        - Find a number p' such that hash(pp') contains 6 leading
-        zeroes, where p is the previous p'
-        - p is the previous proof, and p' is the new proof
-        """
-
-        proof = 0
-        while self.valid_proof(last_proof, proof) is False:
-            proof += 1
-
-        return proof
-
     @staticmethod
     def valid_proof(last_proof, proof):
         """
-        Validates the Proof:  Multi-ouroborus:  Do the last six characters of
-        the last hash matchc the first six characters of the proof?
-
-        IE:  last_hash: ...999123456, new hash 123456888...
+        Validates the Proof:  Does hash(last_proof, proof) contain 6
+        leading zeroes?
         """
+        guess = f'{last_proof}{proof}'.encode()
+        guess_hash = hashlib.sha256(guess).hexdigest()
+        return guess_hash[:6] == "000000"
 
-        last_hash = hashlib.sha256(str(last_proof).encode()).hexdigest()
-        guess = hashlib.sha256(str(proof).encode()).hexdigest()
-        return guess[:6] == last_hash[-6:]
+    # def valid_chain(self, chain):
+    #     """
+    #     Determine if a given blockchain is valid
 
-    def valid_chain(self, chain):
-        """
-        Determine if a given blockchain is valid
+    #     :param chain: <list> A blockchain
+    #     :return: <bool> True if valid, False if not
+    #     """
 
-        :param chain: <list> A blockchain
-        :return: <bool> True if valid, False if not
-        """
+    #     last_block = chain[0]
+    #     current_index = 1
 
-        last_block = chain[0]
-        current_index = 1
+    #     while current_index < len(chain):
+    #         block = chain[current_index]
+    #         print(f'{last_block}')
+    #         print(f'{block}')
+    #         print("\n-------------------\n")
+    #         # Check that the hash of the block is correct
+    #         if block['previous_hash'] != self.hash(last_block):
+    #             return False
 
-        while current_index < len(chain):
-            block = chain[current_index]
-            print(f'{last_block}')
-            print(f'{block}')
-            print("\n-------------------\n")
-            # Check that the hash of the block is correct
-            if block['previous_hash'] != self.hash(last_block):
-                return False
+    #         # Check that the Proof of Work is correct
+    #         if not self.valid_proof(last_block['proof'], block['proof']):
+    #             return False
 
-            # Check that the Proof of Work is correct
-            if not self.valid_proof(last_block['proof'], block['proof']):
-                return False
+    #         last_block = block
+    #         current_index += 1
 
-            last_block = block
-            current_index += 1
-
-        return True
+    #     return True
