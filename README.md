@@ -33,7 +33,7 @@
 "players": [],
 "items": ["boots", "jacket"],
 "exits": ["n", "s", "e", "w"],
-"cooldown": 1,
+"cooldown": 1.0,
 "errors": [],
 "messages": []}
 ```
