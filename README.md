@@ -10,7 +10,7 @@
 
 ## 2. Migrate world
 * `./manage.py shell`
-* copy/paste `util/create_world_from_graph.py` into Python shell
+* copy/paste `util/create_world.py` into Python shell
 
 ## 3. Create a user
 * `curl -X POST -H "Content-Type: application/json" -d '{"username":"testuser", "password1":"testpassword", "password2":"testpassword"}' localhost:8000/api/registration/`

@@ -14,3 +14,5 @@ local_settings.py
 db.sqlite3
 
 tmp/*
+
+create_world_from_graph.py
