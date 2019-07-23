@@ -80,7 +80,7 @@ def last_proof(request):
     # For now, assume there is only one and get that
     blockchain = Block.objects.all()
 
-    last_proof_value = blockchain.last_block.get('proof')
+    last_proof_value = blockchain.last().proof
     response = {
         'proof': last_proof_value
     }

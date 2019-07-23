@@ -18,19 +18,19 @@ class Blockchain(object):
         if self.chain[:1].get() is None:
             self.genesis_block()
 
-    def genesis_block(self):
-        """
-        Create the genesis block and add it to the chain
+    # def genesis_block(self):
+    #     """
+    #     Create the genesis block and add it to the chain
 
-        The genesis block is the anchor of the chain.  It must be the
-        same for all nodes, or their chains will fail consensus.
+    #     The genesis block is the anchor of the chain.  It must be the
+    #     same for all nodes, or their chains will fail consensus.
 
-        It is normally hard-coded
-        """
-        block = Block(proof=1, previous_hash=1)
-        block.save()
+    #     It is normally hard-coded
+    #     """
+    #     block = Block(proof=1, previous_hash=1)
+    #     block.save()
 
-        self.chain.append(block)
+    #     self.chain.append(block)
 
     def new_block(self, proof, previous_hash):
         """
