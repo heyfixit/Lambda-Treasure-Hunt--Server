@@ -1,41 +1,50 @@
 from django.http import JsonResponse
 from .models import Block
 from django.core import serializers
+from django.views.decorators.csrf import csrf_exempt
+
+from .blockchain import Blockchain
+
+import json
 
 
+@csrf_exempt
 def mine(request):
     # Get the blockchain from the database
     # For now, assume there is only one and get that
     blockchain = Block.objects.all()
     # Determine if proof is valid
-    last_block = blockchain.last_block
-    last_proof = last_block['proof']
+    last_block = blockchain.last()
+    last_proof = last_block.proof
 
-    values = request.get_json()
+    body_unicode = request.body.decode('utf-8')
+    values = json.loads(body_unicode)
+
     submitted_proof = values.get('proof')
     id = values.get('id')
 
-    if blockchain.valid_proof(last_proof, submitted_proof):
+    if Blockchain.valid_proof(last_proof, submitted_proof):
         # We must receive a reward for finding the proof.
         # The sender is "0" to signify that this node has mine a new coin
-        blockchain.new_transaction(
+        Blockchain.new_transaction(
             sender="0",
             recipient=id,
             amount=1,
         )
 
         # Forge the new Block by adding it to the chain
-        previous_hash = blockchain.hash(last_block)
-        # print('Hash is: ' + str(previous_hash), file=sys.stderr)
-        block = blockchain.new_block(submitted_proof, previous_hash)
+        previous_hash = Blockchain.hash(last_block)
+        
+        block = Blockchain.new_block(submitted_proof, previous_hash)
 
         response = {
             'message': "New Block Forged",
-            'index': block['index'],
-            'transactions': block['transactions'],
-            'proof': block['proof'],
-            'previous_hash': block['previous_hash'],
+            'index': block.index,
+            'transactions': str(block.transactions),
+            'proof': block.proof,
+            'previous_hash': block.previous_hash,
         }
+
         return JsonResponse(response)
     else:
         response = {
@@ -43,13 +52,14 @@ def mine(request):
         }
         return JsonResponse(response)
 
-
+@csrf_exempt
 def new_transaction(request):
     # Get the blockchain from the database
     # For now, assume there is only one and get that
     blockchain = Block.objects.all()
 
-    values = request.get_json()
+    body_unicode = request.body.decode('utf-8')
+    values = json.loads(body_unicode)
 
     # Check that the required fields are in the POST'ed data
     required = ['sender', 'recipient', 'amount']
@@ -57,7 +67,7 @@ def new_transaction(request):
         return 'Missing Values', 400
 
     # Create a new Transaction
-    index = blockchain.new_transaction(values['sender'],
+    index = Blockchain.new_transaction(values['sender'],
                                        values['recipient'],
                                        values['amount'])
 

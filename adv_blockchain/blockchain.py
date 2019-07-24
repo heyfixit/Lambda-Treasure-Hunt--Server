@@ -1,38 +1,12 @@
 import hashlib
 import json
-from time import time
-from uuid import uuid4
-
-from urllib.parse import urlparse
-import requests
 
 from .models import Block, Transaction
 
 
 class Blockchain(object):
-    def __init__(self):
-        # Assume chain 0 is the chain
-        self.chain = Block.objects.all()
-        # self.current_transactions = chain.current_transactions
-        breakpoint()
-        if self.chain[:1].get() is None:
-            self.genesis_block()
-
-    # def genesis_block(self):
-    #     """
-    #     Create the genesis block and add it to the chain
-
-    #     The genesis block is the anchor of the chain.  It must be the
-    #     same for all nodes, or their chains will fail consensus.
-
-    #     It is normally hard-coded
-    #     """
-    #     block = Block(proof=1, previous_hash=1)
-    #     block.save()
-
-    #     self.chain.append(block)
-
-    def new_block(self, proof, previous_hash):
+    @staticmethod
+    def new_block(proof, previous_hash):
         """
         Create a new Block in the Blockchain
 
@@ -41,10 +15,12 @@ class Blockchain(object):
         :return: <dict> New Block
         """
 
-        current_transactions = Transaction.object.filter(executed=False)
-        block = Block(transactions=current_transactions,
-                      proof=proof,
+        current_transactions = Transaction.objects.filter(executed=False)
+        block = Block(proof=proof,
                       previous_hash=previous_hash)
+        block.save()
+        # Need to save first to create index for many-to-many
+        block.transactions.set(current_transactions)
         block.save()
 
         # Reset the current list of transactions
@@ -52,7 +28,8 @@ class Blockchain(object):
 
         return block
 
-    def new_transaction(self, sender, recipient, amount):
+    @staticmethod
+    def new_transaction(sender, recipient, amount):
         """
         Creates a new transaction to go into the next mined Block
 
@@ -67,7 +44,7 @@ class Blockchain(object):
                                   amount=amount)
         transaction.save()
 
-        return transaction
+        return Block.objects.all().last().index + 1
 
     @staticmethod
     def hash(block):
@@ -78,15 +55,18 @@ class Blockchain(object):
         "return": <str>
         """
 
-        # We must make sure that the Dictionary is Ordered,
-        # or we'll have inconsistent hashes
+        # Convert to Dict so same serialization works
 
-        block_string = json.dumps(block, sort_keys=True).encode()
+        block_dict = {
+            'index': block.index,
+            'timestamp': str(block.timestamp),
+            'transactions': str(block.transactions),
+            'proof': block.proof,
+            'previous_hash': block.previous_hash,
+        }
+
+        block_string = json.dumps(block_dict, sort_keys=True).encode()
         return hashlib.sha256(block_string).hexdigest()
-
-    @property
-    def last_block(self):
-        return self.chain[-1]
 
     @staticmethod
     def valid_proof(last_proof, proof):
@@ -97,32 +77,3 @@ class Blockchain(object):
         guess = f'{last_proof}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:6] == "000000"
-
-    # def valid_chain(self, chain):
-    #     """
-    #     Determine if a given blockchain is valid
-
-    #     :param chain: <list> A blockchain
-    #     :return: <bool> True if valid, False if not
-    #     """
-
-    #     last_block = chain[0]
-    #     current_index = 1
-
-    #     while current_index < len(chain):
-    #         block = chain[current_index]
-    #         print(f'{last_block}')
-    #         print(f'{block}')
-    #         print("\n-------------------\n")
-    #         # Check that the hash of the block is correct
-    #         if block['previous_hash'] != self.hash(last_block):
-    #             return False
-
-    #         # Check that the Proof of Work is correct
-    #         if not self.valid_proof(last_block['proof'], block['proof']):
-    #             return False
-
-    #         last_block = block
-    #         current_index += 1
-
-    #     return True

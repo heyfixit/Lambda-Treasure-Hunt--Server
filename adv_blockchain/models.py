@@ -14,7 +14,7 @@ class Block(models.Model):
 class Transaction(models.Model):
     sender = models.TextField()
     recipient = models.TextField()
-    value = models.FloatField()
+    amount = models.FloatField()
     executed = models.BooleanField(default=False)
 
 
