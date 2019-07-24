@@ -63,12 +63,21 @@ class Blockchain(object):
         :return: <int> The index of the Block that will hold this transaction
         """
 
-        transaction = Transaction(sender=sender,
-                                  recipient=recipient,
-                                  amount=amount)
-        transaction.save()
+        # Confirm that the sender can afford this transaction
 
-        return Block.objects.all().last().index + 1
+        sender_balance = Blockchain.get_user_balance(sender)
+
+        if sender_balance - int(amount) >= 0:
+            transaction = Transaction(sender=sender,
+                                      recipient=recipient,
+                                      amount=amount)
+            transaction.save()
+
+            return Block.objects.all().last().index + 1
+        
+        # Return -1 as the block if transaction would put the sender negative
+        else:
+            return -1
 
     @staticmethod
     def hash(block):

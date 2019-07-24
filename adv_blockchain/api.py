@@ -71,7 +71,11 @@ def new_transaction(request):
                                        values['recipient'],
                                        values['amount'])
 
-    response = {'message': f'Transaction will be added to Block {index}'}
+    # -1 means the transaction failed due to insufficient funds
+    if index > 0:
+        response = {'message': f'Transaction will be added to Block {index}'}
+    else:
+        response = {'message': 'ERROR: Sender has insufficient funds'}
     return JsonResponse(response)
 
 @csrf_exempt
