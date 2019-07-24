@@ -34,7 +34,7 @@ def mine(request):
 
         # Forge the new Block by adding it to the chain
         previous_hash = Blockchain.hash(last_block)
-        
+
         block = Blockchain.new_block(submitted_proof, previous_hash)
 
         response = {
@@ -72,6 +72,22 @@ def new_transaction(request):
                                        values['amount'])
 
     response = {'message': f'Transaction will be added to Block {index}'}
+    return JsonResponse(response)
+
+@csrf_exempt
+def get_balance(request):
+    
+    body_unicode = request.body.decode('utf-8')
+    values = json.loads(body_unicode)
+    
+    # Check that the required fields are in the POST'ed data
+    required = ['user_id']
+    if not all(k in values for k in required):
+        return 'Missing Values', 400
+    user_id = values['user_id']
+    balance = Blockchain.get_user_balance(user_id)
+
+    response = {'message': f'User {user_id} has a balance of {balance}'}
     return JsonResponse(response)
 
 

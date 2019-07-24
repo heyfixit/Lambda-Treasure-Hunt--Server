@@ -3,6 +3,9 @@ import json
 
 from .models import Block, Transaction
 
+from django.db import models
+from django.db.models import Sum
+
 
 class Blockchain(object):
     @staticmethod
@@ -27,6 +30,27 @@ class Blockchain(object):
         current_transactions.update(executed=True)
 
         return block
+
+    @staticmethod
+    def get_user_balance(user_id):
+        """
+        Check the chain for the current balance of a given user
+
+        NOTE: This may be problematic with a big enough chain
+        There may be security problems with executed vs. not transactions
+        """
+        total_received = Transaction.objects.filter(recipient=user_id).aggregate(Sum('amount'))['amount__sum']
+        total_spent = Transaction.objects.filter(sender=user_id).aggregate(Sum('amount'))['amount__sum']
+        
+        if total_received is None:
+            total_received = 0
+
+        if total_spent is None:
+            total_spent = 0
+
+        balance = total_received - total_spent
+
+        return balance
 
     @staticmethod
     def new_transaction(sender, recipient, amount):
