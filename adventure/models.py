@@ -11,7 +11,7 @@ import math
 
 class Group(models.Model):
     name = models.CharField(max_length=20, unique=True)
-    cooldown = models.IntegerField(default=60)
+    # cooldown = models.IntegerField(default=60)
 
 class Room(models.Model):
     title = models.CharField(max_length=50, default="DEFAULT TITLE")
