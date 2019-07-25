@@ -15,6 +15,8 @@ from adv_blockchain.blockchain import Blockchain
 pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
 
 SHOP_ROOM_ID=1
+TRANSMOGRIPHIER_ROOM_ID = 999
+MINING_ROOM_ID = 998
 NAME_CHANGE_ROOM_ID=467
 HOLLOWAY_SHRINE_ROOM_ID=22
 BRADY_SHRINE_ROOM_ID=461
@@ -36,7 +38,9 @@ PENALTY_BLASPHEMY = 10
 MIN_COOLDOWN = 1
 MAX_COOLDOWN = 600
 
-def randomize_item(player, item):
+# Generates a randomized item from the item passed in.  Returns the new item
+# NOTE: This does not delete the old item
+def randomize_item(item):
     quality = random.triangular(-1, 1)
     adjective = ""
 
@@ -69,6 +73,9 @@ def randomize_item(player, item):
          itemtype=item.itemtype,
          attributes=json.dumps(atts),
     t.save()
+
+    return item
+
 
 def check_cooldown_error(player):
     """
@@ -272,7 +279,8 @@ def take(request):
         errors.append(f"Item too heavy: +{PENALTY_TOO_HEAVY}s CD")
     else:
         messages.append(f"You have picked up {item.name}")
-        player.addItem(item)
+        player.addItem(randomize_item(item))
+        item.delete()
     player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
     player.save()
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
@@ -292,18 +300,22 @@ def gamble(request):
     cooldown_seconds = get_cooldown(player, 0.5)
     errors = []
     messages = []
-    if item is None:
+    if player.currentRoom != TRANSMOGRIPHIER_ROOM_ID:
         cooldown_seconds += PENALTY_NOT_FOUND
-        errors.append(f"Item not found: +{PENALTY_NOT_FOUND}s CD")
+        errors.append("Transmogriphier not found: +{PENALTY_NOT_FOUND}")
     else:
-        if Blockchain.get_user_balance(player) > 1:
-            # Spend the coin by giving it back to the server
-            Blockchain.new_transaction(player, 0, 1)
-            # TODO: Generate new item
+        if item is None:
+            cooldown_seconds += PENALTY_NOT_FOUND
+            errors.append(f"Item not found: +{PENALTY_NOT_FOUND}s CD")
         else:
-            # TODO: Error for not having a coin
-            cooldown_seconds += PENALTY_CANT_AFFORD
-            errors.append(f"You don't have a Lambda Coin: +{PENALTY_CANT_AFFORD}s CD")
+            if Blockchain.get_user_balance(player) > 1:
+                # Spend the coin by giving it back to the server
+                Blockchain.new_transaction(player, 0, 1)
+                player.addItem()
+            else:
+                # TODO: Error for not having a coin
+                cooldown_seconds += PENALTY_CANT_AFFORD
+                errors.append(f"You don't have a Lambda Coin: +{PENALTY_CANT_AFFORD}s CD")
 
     player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
     player.save()
