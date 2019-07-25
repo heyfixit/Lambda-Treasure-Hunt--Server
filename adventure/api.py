@@ -60,8 +60,8 @@ def api_response(player, cooldown_seconds, errors=None, messages=None):
                                  'coordinates':room.coordinates,
                                  'elevation':room.elevation,
                                  'terrain':room.terrain,
-                                 'players':room.playerNames(player.id, True),
-                                 'items':room.itemNames(),
+                                 'players':room.playerNames(player.id, player.group, True),
+                                 'items':room.itemNames(player.group),
                                  'exits':room.exits(),
                                  'cooldown': cooldown_seconds,
                                  'errors': errors,
@@ -73,8 +73,8 @@ def api_response(player, cooldown_seconds, errors=None, messages=None):
                                  'coordinates':room.coordinates,
                                  'elevation':room.elevation,
                                  'terrain':room.terrain,
-                                 'players':room.playerNames(player.id, True),
-                                 'items':room.itemNames(),
+                                 'players':room.playerNames(player.id, player.group, True),
+                                 'items':room.itemNames(player.group),
                                  'exits':room.exits(),
                                  'cooldown': cooldown_seconds,
                                  'errors': errors,
@@ -227,7 +227,7 @@ def take(request):
 
     alias = data['name']
     room = player.room()
-    item = room.findItemByAlias(alias)
+    item = room.findItemByAlias(alias, player.group)
     cooldown_seconds = get_cooldown(player, 0.5)
     errors = []
     messages = []
@@ -256,7 +256,7 @@ def drop(request):
 
     alias = data['name']
     room = player.room()
-    item = player.findItemByAlias(alias)
+    item = player.findItemByAlias(alias, player.group)
     cooldown_seconds = get_cooldown(player, 0.5)
     errors = []
     messages = []
@@ -283,10 +283,10 @@ def examine(request):
     alias = data['name']
     room = player.room()
     # import pdb; pdb.set_trace()
-    item = room.findItemByAlias(alias)
+    item = room.findItemByAlias(alias, player.group)
     if item is None:
-        item = player.findItemByAlias(alias)
-    players = room.findPlayerByName(alias)
+        item = player.findItemByAlias(alias, player.group)
+    players = room.findPlayerByName(alias, player.group)
     cooldown_seconds = get_cooldown(player, 0.5)
     errors = []
     messages = []
@@ -340,7 +340,7 @@ def sell(request):
         cooldown_seconds += PENALTY_NOT_FOUND
         errors.append("Shop not found: +{PENALTY_NOT_FOUND}")
     else:
-        item = player.findItemByAlias(data["name"])
+        item = player.findItemByAlias(data["name"], player.group)
         if item is None:
             cooldown_seconds += PENALTY_NOT_FOUND
             errors.append(f"Item not found: +{PENALTY_NOT_FOUND}s CD")
@@ -371,7 +371,7 @@ def wear(request):
         return cooldown_error
 
     alias = data['name']
-    item = player.findItemByAlias(alias)
+    item = player.findItemByAlias(alias, player.group)
     cooldown_seconds = get_cooldown(player, 0.5)
     errors = []
     messages = []
@@ -398,7 +398,7 @@ def remove(request):
         return cooldown_error
 
     # alias = data['name']
-    # item = player.findItemByAlias(alias)
+    # item = player.findItemByAlias(alias, player.group)
     # cooldown_seconds = get_cooldown(player, 0.5)
     # errors = []
     # messages = []

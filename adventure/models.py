@@ -42,13 +42,13 @@ class Room(models.Model):
                 print("Invalid direction")
                 return
             self.save()
-    def playerNames(self, currentPlayerID, isPM=False):
+    def playerNames(self, currentPlayerID, group, isPM=False):
         if isPM:
-            return [p.user.username for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID) and not p.is_pm]
+            return [p.user.username for p in Player.objects.filter(currentRoom=self.id, group=group) if p.id != int(currentPlayerID) and not p.is_pm]
         else:
-            return ["ghost" for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID) and not p.is_pm]
-    def playerUUIDs(self, currentPlayerID):
-        return [p.uuid for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID)]
+            return ["ghost" for p in Player.objects.filter(currentRoom=self.id, group=group) if p.id != int(currentPlayerID) and not p.is_pm]
+    def playerUUIDs(self, currentPlayerID, group):
+        return [p.uuid for p in Player.objects.filter(currentRoom=self.id, group=group) if p.id != int(currentPlayerID)]
     def addItem(self, item):
         item.room = self
         if item.player is not None:
@@ -56,16 +56,16 @@ class Room(models.Model):
             item.player = None
             p.save()
         item.save()
-    def findItemByAlias(self, alias):
+    def findItemByAlias(self, alias, group):
         lower_alias = alias.lower()
-        for i in Item.objects.filter(room=self):
+        for i in Item.objects.filter(room=self, group=group):
             if lower_alias in i.aliases.split(","):
                 return i
         return None
-    def findPlayerByName(self, name):
-        return [p for p in Player.objects.filter(currentRoom=self.id) if p.user.username == name.lower()]
-    def itemNames(self):
-        return [i.name for i in Item.objects.filter(room=self)]
+    def findPlayerByName(self, name, group):
+        return [p for p in Player.objects.filter(currentRoom=self.id, group=group) if p.user.username == name.lower()]
+    def itemNames(self, group):
+        return [i.name for i in Item.objects.filter(room=self, group=group)]
     def exits(self):
         exits = []
         if self.n_to is not None:
@@ -106,19 +106,22 @@ class Player(models.Model):
             self.initialize()
             return self.room()
     def addItem(self, item):
-        item.player = self
-        item.room = None
-        item.save()
+        if player.group == item.group:
+            item.player = self
+            item.room = None
+            item.save()
+        else:
+            return False
     def inventory(self):
         return [i.name for i in Item.objects.filter(player=self)]
-    def findItemByAlias(self, alias):
+    def findItemByAlias(self, alias, group):
         lower_alias = alias.lower()
-        for i in Item.objects.filter(player=self):
+        for i in Item.objects.filter(player=self, group=group):
             if lower_alias in i.aliases.split(","):
                 return i
         return None
     def wearItem(self, item):
-        if item.player.id != self.id:
+        if item.player.id != self.id or item.group != player.group:
             return False
         if item.itemtype == "BODYWEAR":
             self.bodywear = item.id
