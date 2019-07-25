@@ -31,8 +31,8 @@ PENALTY_BAD_DASH = 20
 
 PENALTY_BLASPHEMY = 10
 
-MIN_COOLDOWN = 1
-MAX_COOLDOWN = 600
+MIN_COOLDOWN = 1.0
+MAX_COOLDOWN = 600.0
 
 def check_cooldown_error(player):
     """
@@ -131,7 +131,10 @@ def player_examine_api_response(player, cooldown_seconds, errors=None, messages=
 
 def get_cooldown(player, cooldown_scale):
     speed_adjustment = player.speed - 10
-    time_factor = float(config('TIME_SCALE'))
+    if player.group is not None:
+        time_factor = player.group.cooldown
+    else:
+        time_factor = 60
     if player.is_pm:
         time_factor = min(time_factor, 5)
     return max(MIN_COOLDOWN, cooldown_scale * time_factor - speed_adjustment)

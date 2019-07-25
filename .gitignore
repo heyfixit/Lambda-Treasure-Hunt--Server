@@ -16,3 +16,4 @@ db.sqlite3
 tmp/*
 
 Pipfile.lock
+create_world_from_graph.py

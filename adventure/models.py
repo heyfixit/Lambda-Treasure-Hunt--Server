@@ -8,6 +8,11 @@ import uuid
 import random
 import math
 
+
+class Group(models.Model):
+    name = models.CharField(max_length=20, unique=True)
+    cooldown = models.IntegerField(default=60)
+
 class Room(models.Model):
     title = models.CharField(max_length=50, default="DEFAULT TITLE")
     description = models.CharField(max_length=500, default="DEFAULT DESCRIPTION")
@@ -74,6 +79,7 @@ class Room(models.Model):
         return exits
 
 class Player(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=64, unique=True, null=True)
     is_pm = models.BooleanField(default=False)
@@ -162,6 +168,7 @@ def save_user_player(sender, instance, **kwargs):
 
 
 class Item(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     player = models.ForeignKey(Player, on_delete=models.CASCADE, blank=True, null=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=20, default="DEFAULT_ITEM")
@@ -203,4 +210,9 @@ class Item(models.Model):
         self.description = treasure_names[min(self.level - 1, len(treasure_names) - 1)][1]
         self.aliases = f"treasure,{self.name}"
         self.save()
+
+
+
+
+
 
