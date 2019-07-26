@@ -38,6 +38,7 @@ PENALTY_BLASPHEMY = 10
 MIN_COOLDOWN = 1
 MAX_COOLDOWN = 600
 
+
 # Generates a randomized item from the item passed in.  Returns the new item
 # NOTE: This does not delete the old item
 def randomize_item(item):
@@ -66,15 +67,15 @@ def randomize_item(item):
         atts['SPEED'] = int(atts['SPEED'] + (atts['SPEED'] * quality))
 
     t = Item(name=adjective+item.name,
-         description=name.description+"  It has been transmogrified.",
-         weight=int(item.weight - (item.weight * quality)),
-         aliases="transmographied "+item.aliases,
-         value=int(item.value + (item.value * quality)),
-         itemtype=item.itemtype,
-         attributes=json.dumps(atts),
+             description=item.description+"  It has been transmogrified.",
+             weight=int(item.weight - (item.weight * quality)),
+             aliases="transmographied "+item.aliases,
+             value=int(item.value + (item.value * quality)),
+             itemtype=item.itemtype,
+             attributes=json.dumps(atts))
     t.save()
 
-    return item
+    return t
 
 
 def check_cooldown_error(player):
