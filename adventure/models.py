@@ -11,7 +11,8 @@ import math
 
 class Group(models.Model):
     name = models.CharField(max_length=20, unique=True)
-    cooldown = models.IntegerField(default=60)
+    cooldown = models.IntegerField(default=100)
+    vision_enabled = models.BooleanField(default=False)
 
 class Room(models.Model):
     title = models.CharField(max_length=50, default="DEFAULT TITLE")
@@ -82,6 +83,7 @@ class Player(models.Model):
     group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=64, unique=True, null=True)
+    active = models.BooleanField(default=True)
     is_pm = models.BooleanField(default=False)
     description = models.CharField(max_length=140, default=" looks like an ordinary person.")
     currentRoom = models.IntegerField(default=0)

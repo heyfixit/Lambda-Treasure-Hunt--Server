@@ -16,5 +16,4 @@ urlpatterns = [
     url('fly', api.fly),
     url('dash', api.dash),
     url('player_state', api.player_state),
-
 ]
