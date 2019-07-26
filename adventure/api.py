@@ -71,7 +71,7 @@ def randomize_item(item):
              group=item.group,
              description=item.description+"  It has been transmogrified.",
              weight=int(item.weight - (item.weight * quality)),
-             aliases="transmographied "+item.aliases,
+             aliases=adjective+" "+item.aliases,
              value=int(item.value + (item.value * quality)),
              itemtype=item.itemtype,
              attributes=json.dumps(atts))
