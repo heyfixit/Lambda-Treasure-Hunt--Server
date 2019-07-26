@@ -59,14 +59,16 @@ def randomize_item(item):
                 adjective = "exquisite"
 
     atts = json.loads(item.attributes)
+    
 
-    if atts['STRENGTH'] is not None:
+    if 'STRENGTH' in atts:
         atts['STRENGTH'] = int(atts['STRENGTH'] + (atts['STRENGTH'] * quality))
 
-    if atts['SPEED'] is not None:
+    if 'SPEED' in atts:
         atts['SPEED'] = int(atts['SPEED'] + (atts['SPEED'] * quality))
 
-    t = Item(name=adjective+item.name,
+    t = Item(name=adjective+" "+item.name,
+             group=item.group,
              description=item.description+"  It has been transmogrified.",
              weight=int(item.weight - (item.weight * quality)),
              aliases="transmographied "+item.aliases,
@@ -292,8 +294,7 @@ def take(request):
         errors.append(f"Item too heavy: +{PENALTY_TOO_HEAVY}s CD")
     else:
         messages.append(f"You have picked up {item.name}")
-        player.addItem(randomize_item(item))
-        item.delete()
+        player.addItem(item)
     player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
     player.save()
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
@@ -308,8 +309,7 @@ def gamble(request):
         return cooldown_error
 
     alias = data['name']
-    room = player.room()
-    item = player.findItemByAlias(alias)
+    item = player.findItemByAlias(alias, player.group)
     cooldown_seconds = get_cooldown(player, 0.5)
     errors = []
     messages = []
@@ -321,10 +321,15 @@ def gamble(request):
             cooldown_seconds += PENALTY_NOT_FOUND
             errors.append(f"Item not found: +{PENALTY_NOT_FOUND}s CD")
         else:
-            if Blockchain.get_user_balance(player) > 1:
+            print("player is: ", request.user.auth_token)
+            print("player balance is, ", Blockchain.get_user_balance(request.user.auth_token))
+            if Blockchain.get_user_balance(request.user.auth_token) > 1:
                 # Spend the coin by giving it back to the server
-                Blockchain.new_transaction(player, 0, 1)
-                player.addItem()
+                Blockchain.new_transaction(request.user.auth_token, 0, 1)
+
+                new_item = randomize_item(item)
+                player.addItem(new_item)
+                item.delete()
             else:
                 # TODO: Error for not having a coin
                 cooldown_seconds += PENALTY_CANT_AFFORD
