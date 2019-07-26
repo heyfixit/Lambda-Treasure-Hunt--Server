@@ -108,7 +108,7 @@ class Player(models.Model):
             self.initialize()
             return self.room()
     def addItem(self, item):
-        if player.group == item.group:
+        if self.group == item.group:
             item.player = self
             item.room = None
             item.save()
