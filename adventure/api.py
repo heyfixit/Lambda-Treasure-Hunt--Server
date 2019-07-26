@@ -66,6 +66,15 @@ def api_response(player, cooldown_seconds, errors=None, messages=None):
                                  'cooldown': cooldown_seconds,
                                  'errors': errors,
                                  'messages':messages}, safe=True)
+    elif not player.group.vision_enabled:
+        response = JsonResponse({'room_id':room.id,
+                                 'title': "A Dark Room",
+                                 'description':"You cannot see anything.",
+                                 'coordinates':room.coordinates,
+                                 'exits':room.exits(),
+                                 'cooldown': cooldown_seconds,
+                                 'errors': errors,
+                                 'messages':messages}, safe=True)
     else:
         response = JsonResponse({'room_id':room.id,
                                  'title': room.title,
