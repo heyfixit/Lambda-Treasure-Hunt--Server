@@ -15,8 +15,8 @@ from adv_blockchain.blockchain import Blockchain
 pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
 
 SHOP_ROOM_ID=1
-TRANSMOGRIPHIER_ROOM_ID = 999
-MINING_ROOM_ID = 998
+TRANSMOGRIPHIER_ROOM_ID = 1  # TODO: Create rooms
+MINING_ROOM_ID = 1
 NAME_CHANGE_ROOM_ID=467
 HOLLOWAY_SHRINE_ROOM_ID=22
 BRADY_SHRINE_ROOM_ID=461
