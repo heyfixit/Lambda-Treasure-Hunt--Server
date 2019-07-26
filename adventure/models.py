@@ -8,6 +8,12 @@ import uuid
 import random
 import math
 
+
+class Group(models.Model):
+    name = models.CharField(max_length=20, unique=True)
+    cooldown = models.IntegerField(default=100)
+    vision_enabled = models.BooleanField(default=False)
+
 class Room(models.Model):
     title = models.CharField(max_length=50, default="DEFAULT TITLE")
     description = models.CharField(max_length=500, default="DEFAULT DESCRIPTION")
@@ -37,13 +43,13 @@ class Room(models.Model):
                 print("Invalid direction")
                 return
             self.save()
-    def playerNames(self, currentPlayerID, isPM=False):
+    def playerNames(self, currentPlayerID, group, isPM=False):
         if isPM:
-            return [p.user.username for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID) and not p.is_pm]
+            return [p.user.username for p in Player.objects.filter(currentRoom=self.id, group=group) if p.id != int(currentPlayerID) and not p.is_pm]
         else:
-            return ["ghost" for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID) and not p.is_pm]
-    def playerUUIDs(self, currentPlayerID):
-        return [p.uuid for p in Player.objects.filter(currentRoom=self.id) if p.id != int(currentPlayerID)]
+            return ["ghost" for p in Player.objects.filter(currentRoom=self.id, group=group) if p.id != int(currentPlayerID) and not p.is_pm]
+    def playerUUIDs(self, currentPlayerID, group):
+        return [p.uuid for p in Player.objects.filter(currentRoom=self.id, group=group) if p.id != int(currentPlayerID)]
     def addItem(self, item):
         item.room = self
         if item.player is not None:
@@ -51,16 +57,16 @@ class Room(models.Model):
             item.player = None
             p.save()
         item.save()
-    def findItemByAlias(self, alias):
+    def findItemByAlias(self, alias, group):
         lower_alias = alias.lower()
-        for i in Item.objects.filter(room=self):
+        for i in Item.objects.filter(room=self, group=group):
             if lower_alias in i.aliases.split(","):
                 return i
         return None
-    def findPlayerByName(self, name):
-        return [p for p in Player.objects.filter(currentRoom=self.id) if p.user.username == name.lower()]
-    def itemNames(self):
-        return [i.name for i in Item.objects.filter(room=self)]
+    def findPlayerByName(self, name, group):
+        return [p for p in Player.objects.filter(currentRoom=self.id, group=group) if p.user.username == name.lower()]
+    def itemNames(self, group):
+        return [i.name for i in Item.objects.filter(room=self, group=group)]
     def exits(self):
         exits = []
         if self.n_to is not None:
@@ -74,8 +80,10 @@ class Room(models.Model):
         return exits
 
 class Player(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=64, unique=True, null=True)
+    active = models.BooleanField(default=True)
     is_pm = models.BooleanField(default=False)
     description = models.CharField(max_length=140, default=" looks like an ordinary person.")
     currentRoom = models.IntegerField(default=0)
@@ -100,19 +108,22 @@ class Player(models.Model):
             self.initialize()
             return self.room()
     def addItem(self, item):
-        item.player = self
-        item.room = None
-        item.save()
+        if player.group == item.group:
+            item.player = self
+            item.room = None
+            item.save()
+        else:
+            return False
     def inventory(self):
         return [i.name for i in Item.objects.filter(player=self)]
-    def findItemByAlias(self, alias):
+    def findItemByAlias(self, alias, group):
         lower_alias = alias.lower()
-        for i in Item.objects.filter(player=self):
+        for i in Item.objects.filter(player=self, group=group):
             if lower_alias in i.aliases.split(","):
                 return i
         return None
     def wearItem(self, item):
-        if item.player.id != self.id:
+        if item.player.id != self.id or item.group != player.group:
             return False
         if item.itemtype == "BODYWEAR":
             self.bodywear = item.id
@@ -162,6 +173,7 @@ def save_user_player(sender, instance, **kwargs):
 
 
 class Item(models.Model):
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, null=True)
     player = models.ForeignKey(Player, on_delete=models.CASCADE, blank=True, null=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=20, default="DEFAULT_ITEM")
@@ -203,4 +215,9 @@ class Item(models.Model):
         self.description = treasure_names[min(self.level - 1, len(treasure_names) - 1)][1]
         self.aliases = f"treasure,{self.name}"
         self.save()
+
+
+
+
+
 
