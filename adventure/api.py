@@ -9,17 +9,21 @@ from rest_framework.decorators import api_view
 import json
 from django.utils import timezone
 from datetime import datetime, timedelta
+from adv_blockchain.blockchain import Blockchain
 
 # instantiate pusher
 pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
 
 SHOP_ROOM_ID=1
+TRANSMOGRIPHIER_ROOM_ID = 1  # TODO: Create rooms
+MINING_ROOM_ID = 1
 NAME_CHANGE_ROOM_ID=467
 HOLLOWAY_SHRINE_ROOM_ID=22
 BRADY_SHRINE_ROOM_ID=461
 
 PENALTY_COOLDOWN_VIOLATION=5
 PENALTY_NOT_FOUND=5
+PENALTY_CANT_AFFORD=5
 PENALTY_CANNOT_MOVE_THAT_WAY=5
 PENALTY_TOO_HEAVY=5
 PENALTY_UPHILL = 5
@@ -33,6 +37,48 @@ PENALTY_BLASPHEMY = 10
 
 MIN_COOLDOWN = 1.0
 MAX_COOLDOWN = 600.0
+
+
+# Generates a randomized item from the item passed in.  Returns the new item
+# NOTE: This does not delete the old item
+def randomize_item(item):
+    quality = random.triangular(-1, 1)
+    adjective = ""
+
+    if quality < 0:
+        adjective = "poor"
+        if quality < -.5:
+            adjective = "terrible"
+            if quality < -.9:
+                adjective = "appalling"
+    else:
+        adjective = "nice"
+        if quality > .5:
+            adjective = "well-crafted"
+            if quality > .9:
+                adjective = "exquisite"
+
+    atts = json.loads(item.attributes)
+    
+
+    if 'STRENGTH' in atts:
+        atts['STRENGTH'] = int(atts['STRENGTH'] + (atts['STRENGTH'] * quality))
+
+    if 'SPEED' in atts:
+        atts['SPEED'] = int(atts['SPEED'] + (atts['SPEED'] * quality))
+
+    t = Item(name=adjective+" "+item.name,
+             group=item.group,
+             description=item.description+"  It has been transmogrified.",
+             weight=int(item.weight - (item.weight * quality)),
+             aliases=adjective+" "+item.aliases,
+             value=int(item.value + (item.value * quality)),
+             itemtype=item.itemtype,
+             attributes=json.dumps(atts))
+    t.save()
+
+    return t
+
 
 def check_cooldown_error(player):
     """
@@ -252,6 +298,49 @@ def take(request):
     player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
     player.save()
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
+
+@api_view(["POST"])
+def gamble(request):
+    player = request.user.player
+    data = json.loads(request.body)
+
+    cooldown_error = check_cooldown_error(player)
+    if cooldown_error is not None:
+        return cooldown_error
+
+    alias = data['name']
+    item = player.findItemByAlias(alias, player.group)
+    cooldown_seconds = get_cooldown(player, 0.5)
+    errors = []
+    messages = []
+    if player.currentRoom != TRANSMOGRIPHIER_ROOM_ID:
+        cooldown_seconds += PENALTY_NOT_FOUND
+        errors.append("Transmogriphier not found: +{PENALTY_NOT_FOUND}")
+    else:
+        if item is None:
+            cooldown_seconds += PENALTY_NOT_FOUND
+            errors.append(f"Item not found: +{PENALTY_NOT_FOUND}s CD")
+        else:
+            print("player is: ", request.user.auth_token)
+            print("player balance is, ", Blockchain.get_user_balance(request.user.auth_token))
+            if Blockchain.get_user_balance(request.user.auth_token) > 1:
+                # Spend the coin by giving it back to the server
+                Blockchain.new_transaction(request.user.auth_token, 0, 1)
+
+                new_item = randomize_item(item)
+                player.addItem(new_item)
+                item.delete()
+            else:
+                # TODO: Error for not having a coin
+                cooldown_seconds += PENALTY_CANT_AFFORD
+                errors.append(f"You don't have a Lambda Coin: +{PENALTY_CANT_AFFORD}s CD")
+
+    player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+    player.save()
+    return api_response(player,
+                        cooldown_seconds,
+                        errors=errors,
+                        messages=messages)
 
 
 @api_view(["POST"])

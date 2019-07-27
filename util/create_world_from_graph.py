@@ -39,6 +39,7 @@ for key in roomGraph5:
 for key in roomGraph6:
     roomGraph[key] = roomGraph6[key]
 
+# End of section 1 to paste
 
 numRooms = len(roomGraph)
 rooms = [None] * numRooms
@@ -47,6 +48,7 @@ for i in range(0, numRooms):
     rooms[i] = Room(title=f"Room {i}", description=f"You are standing in an empty room.", coordinates=f"({roomGraph[i][0][0]},{roomGraph[i][0][1]})",id=i)
     rooms[i].save()
 
+# End of section 2 to paste
 
 for roomID in roomGraph:
     room = rooms[roomID]
@@ -59,12 +61,14 @@ for roomID in roomGraph:
     if 'w' in roomGraph[roomID][1]:
         rooms[roomID].connectRooms(rooms[roomGraph[roomID][1]['w']], 'w')
 
+# End of section 3 to paste
+
 players=Player.objects.all()
 for p in players:
   p.currentRoom=rooms[0].id
   p.save()
 
-
+# End of section 4 to paste
 
 Item.objects.all().delete()
 
@@ -101,6 +105,7 @@ t = Item(name="jacket",
          room=Room.objects.get(id=0))
 t.save()
 
+# End of section 5 to paste
 
 # from django.contrib.auth.models import User
 # from adventure.models import Player, Room, Item

@@ -55,6 +55,8 @@ class Blockchain(object):
     @staticmethod
     def new_transaction(sender, recipient, amount):
         """
+        WARNING: THIS METHOD IS INSECURE!  USERS MUST NOT BE ALLOWED TO USE IT!
+
         Creates a new transaction to go into the next mined Block
 
         :param sender: <str> Address of the Recipient
@@ -67,7 +69,7 @@ class Blockchain(object):
 
         sender_balance = Blockchain.get_user_balance(sender)
 
-        if sender_balance - int(amount) >= 0:
+        if sender_balance - int(amount) >= 0 or sender == '0':
             transaction = Transaction(sender=sender,
                                       recipient=recipient,
                                       amount=amount)

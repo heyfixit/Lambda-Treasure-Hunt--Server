@@ -112,6 +112,7 @@ def last_proof(request):
 
     last_proof_value = blockchain.last().proof
     response = {
-        'proof': last_proof_value
+        'proof': last_proof_value,
+        'difficulty': 6
     }
     return JsonResponse(response)
