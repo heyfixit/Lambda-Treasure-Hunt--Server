@@ -8,6 +8,9 @@ g.save()
 g = Group(name="default", cooldown=10)
 g.save()
 
+g = Group(name="cs18eu1", cooldown=100)
+g.save()
+
 
 Room.objects.all().delete()
 
