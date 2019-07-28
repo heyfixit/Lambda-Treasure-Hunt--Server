@@ -13,6 +13,7 @@ class Group(models.Model):
     name = models.CharField(max_length=20, unique=True)
     cooldown = models.IntegerField(default=100)
     vision_enabled = models.BooleanField(default=False)
+    can_mine = models.BooleanField(default=False)
 
 class Room(models.Model):
     title = models.CharField(max_length=50, default="DEFAULT TITLE")
@@ -84,6 +85,7 @@ class Player(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=64, unique=True, null=True)
     active = models.BooleanField(default=True)
+    has_rename = models.BooleanField(default=False)
     is_pm = models.BooleanField(default=False)
     description = models.CharField(max_length=140, default=" looks like an ordinary person.")
     currentRoom = models.IntegerField(default=0)
