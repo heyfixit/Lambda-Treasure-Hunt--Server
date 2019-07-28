@@ -19,7 +19,7 @@ TRANSMOGRIPHIER_ROOM_ID = 1  # TODO: Create rooms
 MINING_ROOM_ID = 1
 NAME_CHANGE_ROOM_ID=467
 HOLLOWAY_SHRINE_ROOM_ID=22
-BRADY_SHRINE_ROOM_ID=461
+LINH_SHRINE_ROOM_ID=461
 
 PENALTY_COOLDOWN_VIOLATION=5
 PENALTY_NOT_FOUND=5
@@ -560,7 +560,7 @@ def pray(request):
         messages.append(f"You notice your body starts to hover above the ground.")
         if len(Player.objects.filter(id=9)) > 0:
             pusher.trigger(f'p-channel-{Player.objects.get(id=9).uuid}', u'broadcast', {'message':f'{player.name} has prayed.'})
-    elif player.currentRoom == BRADY_SHRINE_ROOM_ID:
+    elif player.currentRoom == LINH_SHRINE_ROOM_ID:
         player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
         player.can_dash = True
         player.save()
