@@ -18,8 +18,8 @@ SHOP_ROOM_ID=1
 TRANSMOGRIPHIER_ROOM_ID = 1  # TODO: Create rooms
 MINING_ROOM_ID = 1
 NAME_CHANGE_ROOM_ID=467
-HOLLOWAY_SHRINE_ROOM_ID=22
-LINH_SHRINE_ROOM_ID=461
+FLIGHT_SHRINE_ROOM_ID=22
+DASH_SHRINE_ROOM_ID=461
 
 NAME_CHANGE_PRICE=1000
 
@@ -35,7 +35,7 @@ PENALTY_CAVE_FLY = 10
 
 PENALTY_BAD_DASH = 20
 
-PENALTY_BLASPHEMY = 10
+PENALTY_BLASPHEMY = 30
 
 MIN_COOLDOWN = 1.0
 MAX_COOLDOWN = 600.0
@@ -559,6 +559,7 @@ def change_name(request):
             errors.append(f"ERROR: That name is taken.")
         else:
             messages.append(f"You have changed your name to {new_name}.")
+            messages.append(f"'Ere's a tip from Pirate Ry: If you find a shrine, try prayin'. Ye' never know who may be listenin'.")
     player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
     player.save()
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
@@ -577,21 +578,27 @@ def pray(request):
     cooldown_seconds = get_cooldown(player, 5.0)
     errors = []
     messages = []
-    if player.currentRoom == HOLLOWAY_SHRINE_ROOM_ID:
+    currentRoom = player.currentRoom
+    if (currentRoom == FLIGHT_SHRINE_ROOM_ID or currentRoom == DASH_SHRINE_ROOM_ID) and not player.has_rename:
+        cooldown_seconds += PENALTY_BLASPHEMY
+        errors.append(f"One with no name is unworthy to pray here: +{PENALTY_BLASPHEMY}s")
+        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.save()
+    elif player.currentRoom == FLIGHT_SHRINE_ROOM_ID:
         player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
         player.can_fly = True
         player.save()
         messages.append(f"You notice your body starts to hover above the ground.")
-    elif player.currentRoom == LINH_SHRINE_ROOM_ID:
+    elif currentRoom == DASH_SHRINE_ROOM_ID:
         player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
         player.can_dash = True
         player.save()
         messages.append(f"You feel a mysterious power and speed coiling in your legs.")
     else:
-        cooldown_seconds += 5 * PENALTY_NOT_FOUND
+        cooldown_seconds += PENALTY_BLASPHEMY
         player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
         player.save()
-        errors.append(f"Shrine not found: +{5 * PENALTY_NOT_FOUND}")
+        errors.append(f"You cannot pray here: +{PENALTY_BLASPHEMY}s")
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
 
 

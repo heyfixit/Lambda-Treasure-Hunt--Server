@@ -611,8 +611,8 @@ r.save()
 
 
 r=Room.objects.get(id=461)
-r.title = 'An Ancient Shrine'
-r.description = 'You are standing before a dark shrine to a fast looking fellow.'
+r.title = "Linh's Shrine"
+r.description = 'You are standing before a glowing shrine to a Linh, the Swift. She looks quite fast.'
 r.elevation = 0
 r.terrain = 'CAVE'
 r.save()
