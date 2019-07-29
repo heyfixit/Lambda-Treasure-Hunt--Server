@@ -21,6 +21,8 @@ NAME_CHANGE_ROOM_ID=467
 HOLLOWAY_SHRINE_ROOM_ID=22
 LINH_SHRINE_ROOM_ID=461
 
+NAME_CHANGE_PRICE=1000
+
 PENALTY_COOLDOWN_VIOLATION=5
 PENALTY_NOT_FOUND=5
 PENALTY_CANT_AFFORD=5
@@ -532,11 +534,30 @@ def change_name(request):
         player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
         player.save()
         errors.append("Name changer not found: +{5 * PENALTY_NOT_FOUND}")
+    elif "confirm" not in data or data["confirm"].lower() != "aye":
+        messages.append(f"Arrr, ye' be wantin' to change yer name? I can take care of ye' fer... {NAME_CHANGE_PRICE} gold.")
+        messages.append(f"(include 'confirm':'aye' to change yer name)")
+    elif player.gold < NAME_CHANGE_PRICE:
+        cooldown_seconds += PENALTY_CANT_AFFORD
+        messages.append(f"Ye' don't have enough gold.")
+        errors.append(f"Cannot afford: +{PENALTY_CANT_AFFORD}")
     else:
-        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        oldname = player.name
+        user = player.user
+        user.username = new_name.lower()
         player.name = new_name
-        player.save()
-        messages.append(f"You have changed your name to {new_name}.")
+        player.has_rename = True
+        player.gold -= NAME_CHANGE_PRICE
+        try:
+            user.save()
+        except:
+            player.name = oldname
+            player.gold += NAME_CHANGE_PRICE
+            errors.append(f"ERROR: That name is taken.")
+        else:
+            messages.append(f"You have changed your name to {new_name}.")
+    player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+    player.save()
     return api_response(player, cooldown_seconds, errors=errors, messages=messages)
 
 
