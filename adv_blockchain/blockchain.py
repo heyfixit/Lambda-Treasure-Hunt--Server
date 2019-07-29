@@ -1,11 +1,15 @@
 import hashlib
 import json
 
-from .models import Block, Transaction
+from .models import Block, Transaction, ChainDifficulty
 
 from django.db import models
 from django.db.models import Sum
 
+import datetime
+
+MIN_MINUTES = 8
+MAX_MINUTES = 12
 
 class Blockchain(object):
     @staticmethod
@@ -13,10 +17,33 @@ class Blockchain(object):
         """
         Create a new Block in the Blockchain
 
+        Adjust the difficulty if the time to mine this block was < 8 minutes
+        or > 12 minutes
+
         :param proof: <int> The proof given by the Proof of Work algorithm
         :param previous_hash: (Optional) <str> Hash of previous Block
         :return: <dict> New Block
         """
+
+        # Check how long it took to mine this block and adjust the difficulty
+        # accordingly
+
+        last_timestamp = Block.objects.all().last().timestamp.replace(tzinfo=None)
+        current_timestamp = datetime.datetime.utcnow()
+
+        delta = current_timestamp - last_timestamp
+
+        minutes = ((delta.days * 86400) + delta.seconds) / 60
+
+        if minutes < MIN_MINUTES:
+            last_difficulty = ChainDifficulty.objects.all().last().difficulty
+            new_diff_object = ChainDifficulty(difficulty=last_difficulty + 1)
+            new_diff_object.save()
+
+        if minutes > MAX_MINUTES:
+            last_difficulty = ChainDifficulty.objects.all().last().difficulty
+            new_diff_object = ChainDifficulty(difficulty=last_difficulty - 1)
+            new_diff_object.save()
 
         current_transactions = Transaction.objects.filter(executed=False)
         block = Block(proof=proof,
@@ -106,9 +133,10 @@ class Blockchain(object):
     @staticmethod
     def valid_proof(last_proof, proof):
         """
-        Validates the Proof:  Does hash(last_proof, proof) contain 6
+        Validates the Proof:  Does hash(last_proof, proof) contain `difficulty`
         leading zeroes?
         """
+        difficulty = ChainDifficulty.objects.all().last().difficulty
         guess = f'{last_proof}{proof}'.encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
-        return guess_hash[:6] == "000000"
+        return guess_hash[:difficulty] == "0" * difficulty
