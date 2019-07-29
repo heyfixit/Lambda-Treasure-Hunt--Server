@@ -1,11 +1,13 @@
 from django.http import JsonResponse
-from .models import Block
+from .models import Block, ChainDifficulty
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 
 from .blockchain import Blockchain
 
 import json
+
+REWARD_PER_BLOCK = 5
 
 
 @csrf_exempt
@@ -29,7 +31,7 @@ def mine(request):
         Blockchain.new_transaction(
             sender="0",
             recipient=id,
-            amount=1,
+            amount=REWARD_PER_BLOCK,
         )
 
         # Forge the new Block by adding it to the chain
@@ -113,6 +115,6 @@ def last_proof(request):
     last_proof_value = blockchain.last().proof
     response = {
         'proof': last_proof_value,
-        'difficulty': 6
+        'difficulty': ChainDifficulty.objects.all().last().difficulty
     }
     return JsonResponse(response)

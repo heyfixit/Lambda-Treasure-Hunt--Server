@@ -18,8 +18,5 @@ class Transaction(models.Model):
     executed = models.BooleanField(default=False)
 
 
-# class Chain(models.Model):
-#     # Adding to database to prevent Heroku sharding problems
-#     # that arise when this is in memory alone
-#     chain = models.ManyToManyField('Block', blank=True)
-#     current_transactions = models.ManyToManyField('Transaction', blank=True)
+class ChainDifficulty(models.Model):
+    difficulty = models.IntegerField()
