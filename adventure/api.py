@@ -525,7 +525,6 @@ def change_name(request):
     if cooldown_error is not None:
         return cooldown_error
 
-    new_name = data['name']
     cooldown_seconds = get_cooldown(player, 2.0)
     errors = []
     messages = []
@@ -534,6 +533,9 @@ def change_name(request):
         player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
         player.save()
         errors.append("Name changer not found: +{5 * PENALTY_NOT_FOUND}")
+    elif "name" not in data:
+        messages.append(f"Arrr, ye' be wantin' to change yer name? I can take care of ye' fer... {NAME_CHANGE_PRICE} gold.")
+        messages.append(f"(include 'name':'<NEW_NAME>' in the request)")
     elif "confirm" not in data or data["confirm"].lower() != "aye":
         messages.append(f"Arrr, ye' be wantin' to change yer name? I can take care of ye' fer... {NAME_CHANGE_PRICE} gold.")
         messages.append(f"(include 'confirm':'aye' to change yer name)")
@@ -542,6 +544,7 @@ def change_name(request):
         messages.append(f"Ye' don't have enough gold.")
         errors.append(f"Cannot afford: +{PENALTY_CANT_AFFORD}")
     else:
+        new_name = data['name']
         oldname = player.name
         user = player.user
         user.username = new_name.lower()

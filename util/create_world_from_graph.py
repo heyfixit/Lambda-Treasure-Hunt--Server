@@ -135,8 +135,8 @@ shop.title = "Shop"
 shop.description = "You are standing in a small shop. A sign behind the mechanical shopkeeper says 'WILL PAY FOR TREASURE'."
 shop.save()
 
-name_changer.title = "Name Changer"
-name_changer.description = "You see a man who will change your name."
+name_changer.title = "Pirate Ry's"
+name_changer.description = "You see a sign before you that reads:\n\n'You have found Pirate Ry's. Send a `change_name` request and I'll change your identity to whatever you wish... for a price.'"
 name_changer.save()
 
 
