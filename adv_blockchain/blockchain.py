@@ -106,9 +106,9 @@ class Blockchain(object):
     @staticmethod
     def valid_proof(last_proof, proof):
         """
-        Validates the Proof:  Does hash(last_proof, proof) contain 6
-        leading zeroes?
-        """
-        guess = f'{last_proof}{proof}'.encode()
-        guess_hash = hashlib.sha256(guess).hexdigest()
-        return guess_hash[:6] == "000000"
+    Validates the Proof:  Does hash(last_proof, proof) contain `difficulty`
+    leading zeroes?
+    """
+    guess = f'{last_proof}{proof}'.encode()
+    guess_hash = hashlib.sha256(guess).hexdigest()
+    return guess_hash[:difficulty] == "0" * difficulty
