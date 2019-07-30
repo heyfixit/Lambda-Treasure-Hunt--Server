@@ -2,6 +2,8 @@ from django.http import JsonResponse
 from .models import Block, ChainDifficulty
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
+from rest_framework.decorators import api_view
 
 from .blockchain import Blockchain
 
@@ -10,8 +12,9 @@ import json
 REWARD_PER_BLOCK = 5
 
 
-@csrf_exempt
+@api_view(["POST"])
 def mine(request):
+    player = request.user.player
     # Get the blockchain from the database
     # For now, assume there is only one and get that
     blockchain = Block.objects.all()
@@ -23,7 +26,7 @@ def mine(request):
     values = json.loads(body_unicode)
 
     submitted_proof = values.get('proof')
-    id = values.get('id')
+    id = player.id
 
     if Blockchain.valid_proof(last_proof, submitted_proof):
         # We must receive a reward for finding the proof.
@@ -54,60 +57,62 @@ def mine(request):
         }
         return JsonResponse(response)
 
-@csrf_exempt
-def new_transaction(request):
-    # Get the blockchain from the database
-    # For now, assume there is only one and get that
-    blockchain = Block.objects.all()
+# def new_transaction(request):
+#     player = request.user.player
+#     # Get the blockchain from the database
+#     # For now, assume there is only one and get that
+#     blockchain = Block.objects.all()
 
-    body_unicode = request.body.decode('utf-8')
-    values = json.loads(body_unicode)
+#     body_unicode = request.body.decode('utf-8')
+#     values = json.loads(body_unicode)
 
-    # Check that the required fields are in the POST'ed data
-    required = ['sender', 'recipient', 'amount']
-    if not all(k in values for k in required):
-        return 'Missing Values', 400
+#     # Check that the required fields are in the POST'ed data
+#     required = ['sender', 'recipient', 'amount']
+#     if not all(k in values for k in required):
+#         return 'Missing Values', 400
 
-    # Create a new Transaction
-    index = Blockchain.new_transaction(values['sender'],
-                                       values['recipient'],
-                                       values['amount'])
+#     # Create a new Transaction
+#     index = Blockchain.new_transaction(values['sender'],
+#                                        values['recipient'],
+#                                        values['amount'])
 
-    # -1 means the transaction failed due to insufficient funds
-    if index > 0:
-        response = {'message': f'Transaction will be added to Block {index}'}
-    else:
-        response = {'message': 'ERROR: Sender has insufficient funds'}
-    return JsonResponse(response)
+#     # -1 means the transaction failed due to insufficient funds
+#     if index > 0:
+#         response = {'message': f'Transaction will be added to Block {index}'}
+#     else:
+#         response = {'message': 'ERROR: Sender has insufficient funds'}
+#     return JsonResponse(response)
 
-@csrf_exempt
+@api_view(["GET"])
 def get_balance(request):
-    
+    player = request.user.player
+
     body_unicode = request.body.decode('utf-8')
     values = json.loads(body_unicode)
-    
-    # Check that the required fields are in the POST'ed data
-    required = ['user_id']
-    if not all(k in values for k in required):
-        return 'Missing Values', 400
-    user_id = values['user_id']
-    balance = Blockchain.get_user_balance(user_id)
 
-    response = {'message': f'User {user_id} has a balance of {balance}'}
+    # Check that the required fields are in the POST'ed data
+    player_id = player.id
+    balance = Blockchain.get_user_balance(player_id)
+
+    response = {'message': f'You have a balance of {balance}'}
     return JsonResponse(response)
 
 
-def full_chain(request):
-    # Get the blockchain from the database
-    # For now, assume there is only one and get that
-    blockchain = Block.objects.all()
+# @api_view(["GET"])
+# def full_chain(request):
+#     player = request.user.player
+#     # Get the blockchain from the database
+#     # For now, assume there is only one and get that
+#     blockchain = Block.objects.all()
 
-    data = serializers.serialize('json', blockchain)
+#     data = serializers.serialize('json', blockchain)
 
-    return JsonResponse(data, safe=False)
+#     return JsonResponse(data, safe=False)
 
 
+@api_view(["GET"])
 def last_proof(request):
+    player = request.user.player
     # Get the blockchain from the database
     # For now, assume there is only one and get that
     blockchain = Block.objects.all()

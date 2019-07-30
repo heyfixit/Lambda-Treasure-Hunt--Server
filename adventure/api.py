@@ -322,11 +322,11 @@ def gamble(request):
             cooldown_seconds += PENALTY_NOT_FOUND
             errors.append(f"Item not found: +{PENALTY_NOT_FOUND}s CD")
         else:
-            print("player is: ", request.user.auth_token)
-            print("player balance is, ", Blockchain.get_user_balance(request.user.auth_token))
-            if Blockchain.get_user_balance(request.user.auth_token) > 1:
+            print("player is: ", player.name)
+            print("player balance is, ", Blockchain.get_user_balance(request.user.id))
+            if Blockchain.get_user_balance(request.user.id) > 1:
                 # Spend the coin by giving it back to the server
-                Blockchain.new_transaction(request.user.auth_token, 0, 1)
+                Blockchain.new_transaction(request.user.id, 0, 1)
 
                 new_item = randomize_item(item)
                 player.addItem(new_item)
