@@ -39,7 +39,7 @@ def proof_of_work():
             data = get_data_from_server()
             last_proof = data.get('proof')
             difficulty = data.get('difficulty')
-            proof = random.randint(-sys.maxsize, sys.maxsize)
+            proof = random.randint(-100000000, 100000000)
             start = time.time()
         else:
             proof += 1
@@ -87,8 +87,8 @@ if __name__ == '__main__':
         post_data = {"proof": new_proof,
                      "id": id}
 
-        r = requests.post(url=node + "/mine", json=post_data)
-        data = r.json()
+        req = requests.post(url=node + "/mine", json=post_data)
+        data = req.json()
         if data.get('message') == 'New Block Forged':
             coins_mined += 1
             print("Total coins mined: " + str(coins_mined))

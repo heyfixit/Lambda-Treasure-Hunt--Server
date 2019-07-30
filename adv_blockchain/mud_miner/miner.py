@@ -25,7 +25,7 @@ def proof_of_work(last_proof, difficulty):
 
 def valid_proof(last_proof, proof, difficulty):
     """
-    Validates the Proof:  Does hash(last_proof, proof) contain 6
+    Validates the Proof:  Does hash(last_proof, proof) contain `difficulty`
     leading zeroes?
     """
     guess = f'{last_proof}{proof}'.encode()
