@@ -42,7 +42,7 @@ class Blockchain(object):
 
         if minutes > MAX_MINUTES:
             last_difficulty = ChainDifficulty.objects.all().last().difficulty
-            new_diff_object = ChainDifficulty(difficulty=last_difficulty - 1)
+            new_diff_object = ChainDifficulty(difficulty=max(1, last_difficulty - 1))
             new_diff_object.save()
 
         current_transactions = Transaction.objects.filter(executed=False)

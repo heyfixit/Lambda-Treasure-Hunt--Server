@@ -26,14 +26,14 @@ def mine(request):
     values = json.loads(body_unicode)
 
     submitted_proof = values.get('proof')
-    id = player.id
+    player_id = player.id
 
     if Blockchain.valid_proof(last_proof, submitted_proof):
         # We must receive a reward for finding the proof.
         # The sender is "0" to signify that this node has mine a new coin
         Blockchain.new_transaction(
             sender="0",
-            recipient=id,
+            recipient=player_id,
             amount=REWARD_PER_BLOCK,
         )
 
