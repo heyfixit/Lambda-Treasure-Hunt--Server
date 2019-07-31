@@ -71,6 +71,7 @@ def mine(request):
         messages.append("New Block Forged")
 
         player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.has_mined = True
         player.save()
 
         response = {
