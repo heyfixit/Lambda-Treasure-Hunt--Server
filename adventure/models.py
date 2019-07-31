@@ -86,6 +86,7 @@ class Player(models.Model):
     name = models.CharField(max_length=64, unique=True, null=True)
     active = models.BooleanField(default=True)
     has_rename = models.BooleanField(default=False)
+    has_mined = models.BooleanField(default=False)
     is_pm = models.BooleanField(default=False)
     description = models.CharField(max_length=140, default=" looks like an ordinary person.")
     currentRoom = models.IntegerField(default=0)
