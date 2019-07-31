@@ -6,16 +6,15 @@ Note that this is not a fully secure blockchain implementation.  As such, studen
 
 # Endpoints
 
-## /api/bc/full_chain
+## /api/bc/full_chain/
 The `full_chain` endpoint is not available in this implementation
 
-## /api/bc/mine
+## /api/bc/mine/
 Submit a proposed proof and your game token to this endpoint to attempt to mine a block.  If successful, you will receive a Lambda Coin.  Note that if you submit the wrong token as your ID, you will not receive your coin and it will be lost.
 
 JSON POST request:
 {
-    "proof": new_proof,
-    "id": your_game_id_token
+    "proof": new_proof
 }
 
 ### Proof of Work
@@ -25,7 +24,7 @@ To keep the time between blocks mined at a consistent rate of about one block ev
 
 Does hash(last_proof, proof) contain N leading zeroes, where N is the current difficulty level?
 
-## /api/bc/last_proof
+## /api/bc/last_proof/
 Get the last valid proof to use to mine a new block.  Also returns the current difficulty level, which is the number of `0`'s required at the beginning of the hash for a new proof to be valid.  
 
 JSON Response:
@@ -34,10 +33,10 @@ JSON Response:
     'difficulty': current_difficulty_level
 }
 
-## /api/bc/get_balance
+## /api/bc/get_balance/
 Get the current coin balance of the requested `user_id`.
 
-JSON POST request:
+JSON GET request:
 {
     "user_id": requested_id
 }

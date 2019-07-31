@@ -675,4 +675,11 @@ r.save()
 
 
 
+r=Room.objects.get(id=495)
+r.title = 'The Transmogrifier'
+r.description = 'A strange machine stands in this room.  There is a large opening on the top.  A placard reads, "Test your luck!  One item and one Lambdacoin!"'
+r.save()
+
+
+
 

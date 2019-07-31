@@ -4,7 +4,7 @@ import requests
 import sys
 
 from uuid import uuid4
-
+import time
 
 def proof_of_work(last_proof, difficulty):
     """
@@ -43,33 +43,44 @@ if __name__ == '__main__':
     coins_mined = 0
 
     # Load or create ID
-    f = open("my_id.txt", "r")
-    id = f.read()
-    print("ID is", id)
-    f.close()
-    if len(id) == 0:
-        f = open("my_id.txt", "w")
-        # Generate a globally unique ID
-        id = str(uuid4()).replace('-', '')
-        print("Created new ID: " + id)
-        f.write(id)
-        f.close()
+    # f = open("my_id.txt", "r")
+    # id = f.read()
+    # print("ID is", id)
+    # f.close()
+    # if len(id) == 0:
+    #     f = open("my_id.txt", "w")
+    #     # Generate a globally unique ID
+    #     id = str(uuid4()).replace('-', '')
+    #     print("Created new ID: " + id)
+    #     f.write(id)
+    #     f.close()
+    auth_key = "7a375b52bdc410eebbc878ed3e58b2e94a8cb607"
     # Run forever until interrupted
     while True:
         # Get the last proof from the server
-        r = requests.get(url=node + "/last_proof")
+        headers = {}
+        headers['Authorization'] = f"Token {auth_key}"
+        headers["Content-Type"] = "application/json"
+        r = requests.get(url=node + "/last_proof/", headers=headers)
+        r.headers['Authorization'] = f"Token {auth_key}"
+        r.headers["Content-Type"] = "application/json"
         data = r.json()
+        print("data: ", data)
         print("Last Proof: ", data.get('proof'))
         print("Difficulty: ", data.get('difficulty'))
+        print(data.get('cooldown'))
+        print("Cooldown: ", data.get("cooldown"))
+        time.sleep(data.get("cooldown"))
         new_proof = proof_of_work(data.get('proof'), data.get('difficulty'))
 
-        post_data = {"proof": new_proof,
-                     "id": id}
+        post_data = {"proof": new_proof}
 
-        r = requests.post(url=node + "/mine", json=post_data)
+        r = requests.post(url=node + "/mine", json=post_data, headers=headers)
         data = r.json()
         if data.get('message') == 'New Block Forged':
             coins_mined += 1
             print("Total coins mined: " + str(coins_mined))
         else:
             print(data.get('message'))
+        time.sleep(data.get("cooldown"))
+

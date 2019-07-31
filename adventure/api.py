@@ -10,12 +10,13 @@ import json
 from django.utils import timezone
 from datetime import datetime, timedelta
 from adv_blockchain.blockchain import Blockchain
+import math
 
 # instantiate pusher
 pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
 
 SHOP_ROOM_ID=1
-TRANSMOGRIPHIER_ROOM_ID=495  # TODO: Create rooms
+TRANSMOGRIFIER_ROOM_ID=495  # TODO: Create rooms
 NAME_CHANGE_ROOM_ID=467
 FLIGHT_SHRINE_ROOM_ID=22
 DASH_SHRINE_ROOM_ID=461
@@ -46,39 +47,55 @@ def randomize_item(item):
     quality = random.triangular(-1, 1)
     adjective = ""
 
+    item_value = 0
+
     if quality < 0:
         adjective = "poor"
+        item_value = 200
         if quality < -.5:
             adjective = "terrible"
+            item_value = 100
             if quality < -.9:
                 adjective = "appalling"
+                item_value = 10
     else:
         adjective = "nice"
+        item_value = 500
         if quality > .5:
             adjective = "well-crafted"
+            item_value = 1000
             if quality > .9:
                 adjective = "exquisite"
+                item_value = 2000
 
-    atts = json.loads(item.attributes)
-    
+    atts = {}
 
-    if 'STRENGTH' in atts:
-        atts['STRENGTH'] = int(atts['STRENGTH'] + (atts['STRENGTH'] * quality))
+    if random.random() > 0.5:
+        itemtype = "FOOTWEAR"
+        name = f"{adjective} boots"
+        aliases = f"{name},boots"
+        description = "These are transmogrified boots."
+        atts['STRENGTH'] = math.floor(1.0 + 2.0 * random.random())
+        atts['SPEED'] = math.floor(50 + 50 * quality)
+    else:
+        itemtype = "BODYWEAR"
+        name = f"{adjective} jacket"
+        aliases = f"{name},jacket"
+        description = "This is a transmogrified jacket."
+        atts['STRENGTH'] = math.floor(6.0 + 4.0 * random.random())
+        atts['SPEED'] = 0
 
-    if 'SPEED' in atts:
-        atts['SPEED'] = int(atts['SPEED'] + (atts['SPEED'] * quality))
-
-    t = Item(name=adjective+" "+item.name,
+    i = Item(name=name,
              group=item.group,
-             description=item.description+"  It has been transmogrified.",
-             weight=int(item.weight - (item.weight * quality)),
-             aliases=adjective+" "+item.aliases,
-             value=int(item.value + (item.value * quality)),
-             itemtype=item.itemtype,
+             description=description,
+             weight=1,
+             aliases=aliases,
+             value=item_value,
+             itemtype=itemtype,
              attributes=json.dumps(atts))
-    t.save()
+    i.save()
 
-    return t
+    return i
 
 
 def check_cooldown_error(player):
@@ -186,7 +203,7 @@ def player_examine_api_response(player, cooldown_seconds, errors=None, messages=
 
 
 def get_cooldown(player, cooldown_scale):
-    speed_adjustment = player.speed - 10
+    speed_adjustment = (player.speed - 10) // 10
     if player.group is not None:
         time_factor = player.group.cooldown
     else:
@@ -311,28 +328,29 @@ def gamble(request):
 
     alias = data['name']
     item = player.findItemByAlias(alias, player.group)
-    cooldown_seconds = get_cooldown(player, 0.5)
+    cooldown_seconds = get_cooldown(player, 1.0)
     errors = []
     messages = []
-    if player.currentRoom != TRANSMOGRIPHIER_ROOM_ID:
+    if player.currentRoom != TRANSMOGRIFIER_ROOM_ID:
         cooldown_seconds += PENALTY_NOT_FOUND
-        errors.append("Transmogriphier not found: +{PENALTY_NOT_FOUND}")
+        errors.append("Transmogrifier not found: +{PENALTY_NOT_FOUND}")
     else:
         if item is None:
             cooldown_seconds += PENALTY_NOT_FOUND
             errors.append(f"Item not found: +{PENALTY_NOT_FOUND}s CD")
         else:
-            print("player is: ", request.user.auth_token)
-            print("player balance is, ", Blockchain.get_user_balance(request.user.auth_token))
-            if Blockchain.get_user_balance(request.user.auth_token) > 1:
+            print("player is: ", player.name)
+            print("player balance is, ", Blockchain.get_user_balance(request.user.id))
+            if Blockchain.get_user_balance(player.id) > 1:
                 # Spend the coin by giving it back to the server
-                Blockchain.new_transaction(request.user.auth_token, 0, 1)
+                Blockchain.new_transaction(player.id, 0, 1)
 
+                oldname = item.name
                 new_item = randomize_item(item)
                 player.addItem(new_item)
-                item.delete()
+                item.levelUpAndRespawn()
+                messages.append(f"Your {oldname} transmogrified into {new_item.name}!")
             else:
-                # TODO: Error for not having a coin
                 cooldown_seconds += PENALTY_CANT_AFFORD
                 errors.append(f"You don't have a Lambda Coin: +{PENALTY_CANT_AFFORD}s CD")
 
@@ -449,10 +467,7 @@ def sell(request):
         else:
             messages.append(f"Thanks, I'll take that {item.name}.")
             messages.append(f"You have received {item.value} gold.")
-            if item.itemtype == "TREASURE":
-                item.levelUpAndRespawn()
-            else:
-                item.unsetItem()
+            item.levelUpAndRespawn()
             player.gold += item.value
 
     player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
