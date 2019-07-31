@@ -36,7 +36,7 @@ JSON Response:
 ## /api/bc/get_balance/
 Get the current coin balance of the requested `user_id`.
 
-JSON POST request:
+JSON GET request:
 {
     "user_id": requested_id
 }

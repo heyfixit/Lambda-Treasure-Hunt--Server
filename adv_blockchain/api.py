@@ -8,7 +8,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 
 from .blockchain import Blockchain
-from adventure.api import check_cooldown_error, get_cooldown
+from adventure.api import check_cooldown_error, get_cooldown, api_response, PENALTY_BLASPHEMY
 
 import json
 
@@ -38,6 +38,14 @@ def mine(request):
     cooldown_error = check_cooldown_error(player)
     if cooldown_error is not None:
         return cooldown_error
+
+    if not player.has_rename:
+        cooldown_seconds += PENALTY_BLASPHEMY
+        errors.append(f"One with no name is unworthy to mine: +{PENALTY_BLASPHEMY}s")
+        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.save()
+        return api_response(player, cooldown_seconds, errors=errors, messages=messages)
+
 
     # Get the blockchain from the database
     # For now, assume there is only one and get that
