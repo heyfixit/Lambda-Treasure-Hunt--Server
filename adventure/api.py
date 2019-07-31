@@ -203,7 +203,7 @@ def player_examine_api_response(player, cooldown_seconds, errors=None, messages=
 
 
 def get_cooldown(player, cooldown_scale):
-    speed_adjustment = player.speed - 10
+    speed_adjustment = (player.speed - 10) // 10
     if player.group is not None:
         time_factor = player.group.cooldown
     else:
