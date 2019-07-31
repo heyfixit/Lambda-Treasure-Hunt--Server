@@ -4,7 +4,7 @@ import requests
 import sys
 
 from uuid import uuid4
-
+import time
 
 def proof_of_work(last_proof, difficulty):
     """
@@ -64,10 +64,13 @@ if __name__ == '__main__':
         r = requests.get(url=node + "/last_proof/", headers=headers)
         r.headers['Authorization'] = f"Token {auth_key}"
         r.headers["Content-Type"] = "application/json"
-        print(r.headers)
         data = r.json()
+        print("data: ", data)
         print("Last Proof: ", data.get('proof'))
         print("Difficulty: ", data.get('difficulty'))
+        print(data.get('cooldown'))
+        print("Cooldown: ", data.get("cooldown"))
+        time.sleep(data.get("cooldown"))
         new_proof = proof_of_work(data.get('proof'), data.get('difficulty'))
 
         post_data = {"proof": new_proof}
@@ -79,3 +82,5 @@ if __name__ == '__main__':
             print("Total coins mined: " + str(coins_mined))
         else:
             print(data.get('message'))
+        time.sleep(data.get("cooldown"))
+

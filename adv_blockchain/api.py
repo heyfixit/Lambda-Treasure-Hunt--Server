@@ -4,17 +4,41 @@ from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from rest_framework.decorators import api_view
+from django.utils import timezone
+from datetime import datetime, timedelta
 
 from .blockchain import Blockchain
+from adventure.api import check_cooldown_error, get_cooldown
 
 import json
 
 REWARD_PER_BLOCK = 5
 
+PENALTY_DUPLICATE_PROOF_VIOLATION = 10
+PENALTY_INVALID_PROOF_VIOLATION = 30
+
+def blockchain_api_response(player, cooldown_seconds, errors=None, messages=None):
+    if errors is None:
+        errors = []
+    if messages is None:
+        messages = []
+    response = JsonResponse({'name':player.name,
+                             'description':player.name + player.description,
+                             'cooldown': cooldown_seconds,
+                             'errors': errors,
+                             'messages': messages}, safe=True)
+    return response
+
+
 
 @api_view(["POST"])
 def mine(request):
     player = request.user.player
+
+    cooldown_error = check_cooldown_error(player)
+    if cooldown_error is not None:
+        return cooldown_error
+
     # Get the blockchain from the database
     # For now, assume there is only one and get that
     blockchain = Block.objects.all()
@@ -28,6 +52,9 @@ def mine(request):
     submitted_proof = values.get('proof')
     player_id = player.id
 
+    cooldown_seconds = get_cooldown(player, 1.0)
+    errors = []
+    messages = []
     if Blockchain.valid_proof(last_proof, submitted_proof):
         # We must receive a reward for finding the proof.
         # The sender is "0" to signify that this node has mine a new coin
@@ -41,21 +68,38 @@ def mine(request):
         previous_hash = Blockchain.hash(last_block)
 
         block = Blockchain.new_block(submitted_proof, previous_hash)
+        messages.append("New Block Forged")
+
+        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.save()
 
         response = {
-            'message': "New Block Forged",
             'index': block.index,
             'transactions': str(block.transactions),
             'proof': block.proof,
             'previous_hash': block.previous_hash,
+            'cooldown': cooldown_seconds,
+            'messages': messages,
+            'errors': errors
         }
 
         return JsonResponse(response)
     else:
-        response = {
-            'message': "Proof was invalid or already submitted."
-        }
-        return JsonResponse(response)
+        # Check if solution would have worked on a previous block.
+        for block in blockchain[::-1]:
+            if Blockchain.valid_proof(block.proof, submitted_proof):
+                # Flag successful attempt that was too late
+                player.has_mined = True
+                cooldown_seconds += PENALTY_DUPLICATE_PROOF_VIOLATION
+                player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+                player.save()
+                errors.append("Proof already submitted: ")
+                return JsonResponse({"cooldown": cooldown_seconds, 'errors':[f"Proof already submitted: +{PENALTY_DUPLICATE_PROOF_VIOLATION}s CD"]}, safe=True, status=400)
+        cooldown_seconds += PENALTY_INVALID_PROOF_VIOLATION
+        player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+        player.save()
+        return JsonResponse({"cooldown": cooldown_seconds, 'errors':[f"Invalid proof: +{PENALTY_INVALID_PROOF_VIOLATION}s CD"]}, safe=True, status=400)
+
 
 # def new_transaction(request):
 #     player = request.user.player
@@ -87,6 +131,14 @@ def mine(request):
 def get_balance(request):
     player = request.user.player
 
+    cooldown_error = check_cooldown_error(player)
+    if cooldown_error is not None:
+        return cooldown_error
+
+    cooldown_seconds = get_cooldown(player, 0.0)
+    player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+    player.save()
+
     body_unicode = request.body.decode('utf-8')
     values = json.loads(body_unicode)
 
@@ -94,7 +146,7 @@ def get_balance(request):
     player_id = player.id
     balance = Blockchain.get_user_balance(player_id)
 
-    response = {'message': f'You have a balance of {balance}'}
+    response = {'cooldown': cooldown_seconds, 'messages': [f'You have a balance of {balance} Lambda Coins'], 'errors': []}
     return JsonResponse(response)
 
 
@@ -113,6 +165,15 @@ def get_balance(request):
 @api_view(["GET"])
 def last_proof(request):
     player = request.user.player
+
+    cooldown_error = check_cooldown_error(player)
+    if cooldown_error is not None:
+        return cooldown_error
+
+    cooldown_seconds = get_cooldown(player, 0.0)
+    player.cooldown = timezone.now() + timedelta(0,cooldown_seconds)
+    player.save()
+
     # Get the blockchain from the database
     # For now, assume there is only one and get that
     blockchain = Block.objects.all()
@@ -120,6 +181,9 @@ def last_proof(request):
     last_proof_value = blockchain.last().proof
     response = {
         'proof': last_proof_value,
-        'difficulty': ChainDifficulty.objects.all().last().difficulty
+        'difficulty': ChainDifficulty.objects.all().last().difficulty,
+        'cooldown': cooldown_seconds,
+        'messages': [],
+        'errors': []
     }
     return JsonResponse(response)
