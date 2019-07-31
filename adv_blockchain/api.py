@@ -149,7 +149,6 @@ def get_balance(request):
     player.save()
 
     body_unicode = request.body.decode('utf-8')
-    values = json.loads(body_unicode)
 
     # Check that the required fields are in the POST'ed data
     player_id = player.id
