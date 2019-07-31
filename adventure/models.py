@@ -126,7 +126,7 @@ class Player(models.Model):
                 return i
         return None
     def wearItem(self, item):
-        if item.player.id != self.id or item.group != player.group:
+        if item.player is None or item.player.id != self.id or item.group != item.player.group:
             return False
         if item.itemtype == "BODYWEAR":
             self.bodywear = item.id
@@ -152,6 +152,7 @@ class Player(models.Model):
         for item in items:
             weight += item.weight
             if item.id == self.footwear or item.id == self.bodywear:
+                print(item.attributes)
                 attr = json.loads(item.attributes)
                 if 'SPEED' in attr:
                     base_speed += attr['SPEED']
@@ -217,6 +218,7 @@ class Item(models.Model):
         self.name = treasure_names[min(self.level - 1, len(treasure_names) - 1)][0]
         self.description = treasure_names[min(self.level - 1, len(treasure_names) - 1)][1]
         self.aliases = f"treasure,{self.name}"
+        self.itemtype = "TREASURE"
         self.save()
 
 
