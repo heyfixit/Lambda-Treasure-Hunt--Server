@@ -16,7 +16,7 @@ import math
 pusher = Pusher(app_id=config('PUSHER_APP_ID'), key=config('PUSHER_KEY'), secret=config('PUSHER_SECRET'), cluster=config('PUSHER_CLUSTER'))
 
 SHOP_ROOM_ID=1
-TRANSMOGRIPHIER_ROOM_ID=495  # TODO: Create rooms
+TRANSMOGRIFIER_ROOM_ID=495  # TODO: Create rooms
 NAME_CHANGE_ROOM_ID=467
 FLIGHT_SHRINE_ROOM_ID=22
 DASH_SHRINE_ROOM_ID=461
@@ -331,9 +331,9 @@ def gamble(request):
     cooldown_seconds = get_cooldown(player, 1.0)
     errors = []
     messages = []
-    if player.currentRoom != TRANSMOGRIPHIER_ROOM_ID:
+    if player.currentRoom != TRANSMOGRIFIER_ROOM_ID:
         cooldown_seconds += PENALTY_NOT_FOUND
-        errors.append("Transmogriphier not found: +{PENALTY_NOT_FOUND}")
+        errors.append("Transmogrifier not found: +{PENALTY_NOT_FOUND}")
     else:
         if item is None:
             cooldown_seconds += PENALTY_NOT_FOUND
