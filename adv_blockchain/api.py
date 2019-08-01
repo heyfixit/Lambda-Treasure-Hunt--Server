@@ -39,6 +39,8 @@ def mine(request):
     if cooldown_error is not None:
         return cooldown_error
 
+    cooldown_seconds = get_cooldown(player, 1.0)
+
     if not player.has_rename:
         cooldown_seconds += PENALTY_BLASPHEMY
         errors.append(f"One with no name is unworthy to mine: +{PENALTY_BLASPHEMY}s")
@@ -60,7 +62,6 @@ def mine(request):
     submitted_proof = values.get('proof')
     player_id = player.id
 
-    cooldown_seconds = get_cooldown(player, 1.0)
     errors = []
     messages = []
     if Blockchain.valid_proof(last_proof, submitted_proof):
