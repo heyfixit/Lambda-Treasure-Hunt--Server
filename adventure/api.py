@@ -210,6 +210,8 @@ def get_cooldown(player, cooldown_scale):
         time_factor = 60
     if player.is_pm:
         time_factor = min(time_factor, 5)
+    if player.group.catchup_enabled and not player.has_rename:
+        time_factor = min(time_factor, 10)
     return max(MIN_COOLDOWN, cooldown_scale * time_factor - speed_adjustment)
 
 
