@@ -14,6 +14,7 @@ class Group(models.Model):
     cooldown = models.IntegerField(default=100)
     vision_enabled = models.BooleanField(default=False)
     can_mine = models.BooleanField(default=False)
+    catchup_enabled = models.BooleanField(default=False)
 
 class Room(models.Model):
     title = models.CharField(max_length=50, default="DEFAULT TITLE")
