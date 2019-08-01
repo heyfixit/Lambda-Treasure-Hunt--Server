@@ -8,8 +8,8 @@ from django.db.models import Sum
 
 import datetime
 
-MIN_MINUTES = 8
-MAX_MINUTES = 12
+MIN_MINUTES = 1
+MAX_MINUTES = 2
 
 class Blockchain(object):
     @staticmethod
