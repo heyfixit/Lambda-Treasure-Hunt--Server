@@ -168,6 +168,7 @@ def player_api_response(player, cooldown_seconds, errors=None, messages=None):
                              'gold': player.gold,
                              'inventory': player.inventory(),
                              'status': [],
+                             'has_mined': player.has_mined,
                              'errors': errors,
                              'messages': messages}, safe=True)
     return response
