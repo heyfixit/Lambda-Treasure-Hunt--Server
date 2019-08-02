@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from .models import Block, ChainDifficulty
+from .models import Block, ChainDifficulty, Transaction
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
@@ -155,6 +155,23 @@ def get_balance(request):
     balance = Blockchain.get_user_balance(player_id)
 
     response = {'cooldown': cooldown_seconds, 'messages': [f'You have a balance of {balance} Lambda Coins'], 'errors': []}
+    return JsonResponse(response)
+
+
+@api_view(["GET"])
+def totals(request):
+    total_coins = {}
+    for transaction in Transaction.objects.all():
+        # Should only be one, but just in case
+        recipient = transaction.recipient
+        if recipient not in total_coins:
+            total_coins[recipient] = 5
+        else:
+            total_coins[recipient] += 5
+    response = {
+        'totals': total_coins
+    }
+
     return JsonResponse(response)
 
 

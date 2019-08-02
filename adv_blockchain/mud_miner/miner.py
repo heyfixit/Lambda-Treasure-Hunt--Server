@@ -54,7 +54,7 @@ if __name__ == '__main__':
     #     print("Created new ID: " + id)
     #     f.write(id)
     #     f.close()
-    auth_key = "7a375b52bdc410eebbc878ed3e58b2e94a8cb607"
+    auth_key = "479432788140a41ce5cb792d873f49bb1fa40212"
     # Run forever until interrupted
     while True:
         # Get the last proof from the server
