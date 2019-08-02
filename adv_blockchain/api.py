@@ -176,9 +176,9 @@ def totals(request):
             player = Player.objects.get(id=int(recipient))
             playername = player.name
         if recipient not in total_coins:
-            total_coins[recipient] = 5
+            total_coins[playername] = 5
         else:
-            total_coins[recipient] += 5
+            total_coins[playername] += 5
     response = {
         'totals': total_coins
     }
