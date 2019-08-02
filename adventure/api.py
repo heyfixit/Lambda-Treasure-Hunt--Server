@@ -765,7 +765,9 @@ def player_state(request):
     if not player.is_pm:
         response = JsonResponse({'ERROR':'BAD_REQUEST'}, safe=True)
     else:
-        players = Player.objects.all()
+        # TODO: Make Dynamic
+        g = Group.objects.last()
+        players = Player.objects.filter(group=g)
         rooms = []
         for p in players:
             rooms.append ([p.name, p.currentRoom])
