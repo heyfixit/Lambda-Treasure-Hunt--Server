@@ -167,7 +167,7 @@ def totals(request):
     for transaction in Transaction.objects.all():
         # Should only be one, but just in case
         recipient = transaction.recipient
-        player = Player.objects.get(id=int(recipient)+1)
+        player = User.objects.get(auth_token=int(recipient)).player
         if recipient not in total_coins:
             total_coins[player.name] = 5
         else:
