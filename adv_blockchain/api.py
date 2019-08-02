@@ -169,8 +169,7 @@ def totals(request):
         recipient = transaction.recipient
         playername = ""
         if (len(recipient) > 10):
-            player = User.objects.get(auth_token=recipient).player
-            playername = player.name
+            continue
         elif recipient == "0":
             playername = "server"
         else:
