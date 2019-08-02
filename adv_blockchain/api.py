@@ -168,9 +168,11 @@ def totals(request):
         # Should only be one, but just in case
         recipient = transaction.recipient
         if (len(recipient) > 10):
+            print(recipient)
             player = User.objects.get(auth_token=recipient).player
         else:
-            player = User.objects.get(auth_token=int(recipient)).player
+            print(recipient)
+            player = Player.objects.get(id=int(recipient))
         if recipient not in total_coins:
             total_coins[recipient] = 5
         else:
