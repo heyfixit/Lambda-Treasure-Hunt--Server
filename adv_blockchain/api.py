@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 from .blockchain import Blockchain
 from adventure.api import check_cooldown_error, get_cooldown, api_response, PENALTY_BLASPHEMY
 
+from adventure.models import Player, Room, Item, Group
+
 import json
 
 REWARD_PER_BLOCK = 5
@@ -165,10 +167,11 @@ def totals(request):
     for transaction in Transaction.objects.all():
         # Should only be one, but just in case
         recipient = transaction.recipient
+        player = Player.objects.get(id=int(recipient))
         if recipient not in total_coins:
-            total_coins[recipient] = 5
+            total_coins[player.name] = 5
         else:
-            total_coins[recipient] += 5
+            total_coins[player.name] += 5
     response = {
         'totals': total_coins
     }
