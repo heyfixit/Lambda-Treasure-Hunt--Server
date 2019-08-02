@@ -167,19 +167,19 @@ def totals(request):
     for transaction in Transaction.objects.all():
         # Should only be one, but just in case
         recipient = transaction.recipient
-        playername = ""
-        if (len(recipient) > 10):
-            player = User.objects.get(auth_token=recipient).player
-            playername = player.name
-        elif recipient == 0:
-            playername = "server"
-        else:
-            player = Player.objects.get(id=int(recipient))
-            playername = player.name
+        # playername = ""
+        # if (len(recipient) > 10):
+        #     player = User.objects.get(auth_token=recipient).player
+        #     playername = player.name
+        # elif recipient == 0:
+        #     playername = "server"
+        # else:
+        #     player = Player.objects.get(id=int(recipient))
+        #     playername = player.name
         if recipient not in total_coins:
-            total_coins[playername] = 5
+            total_coins[recipient] = 5
         else:
-            total_coins[playername] += 5
+            total_coins[recipient] += 5
     response = {
         'totals': total_coins
     }
